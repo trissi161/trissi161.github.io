@@ -173,7 +173,7 @@ with st.form("main_form"):
     with c2:
         u_geb = st.text_input("Geburtsdatum (TT.MM.JJJJ)")
     
-    u_datum = st.date_input("Prüfungsdatum (auf Urkunde)", value=datetime.now()).strftime("%d.%m.%Y")
+    u_datum = st.date_input("Ausstellungsdatum", value=datetime.now()).strftime("%d.%m.%Y")
     
     submit = st.form_submit_button("PDF Erstellen")
 
