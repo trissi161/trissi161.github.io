@@ -5,10 +5,9 @@ from fpdf.enums import XPos, YPos
 from io import BytesIO
 from datetime import datetime
 
-# --- DIE MASTER-KLASSE ---
-class RDF_Urkunden_Generator(FPDF):
+# --- MASTER-GENERATOR ---
+class RDF_Urkunden_Master(FPDF):
     def draw_border(self):
-        # Der typische Falkenfurt-Rahmen
         self.set_line_width(1.5)
         self.set_draw_color(0, 14, 43) 
         self.rect(10, 10, 277, 190) 
@@ -41,7 +40,7 @@ class RDF_Urkunden_Generator(FPDF):
         self.cell(0, 8, f'geboren am {geburtsdatum}', align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         self.ln(2)
 
-        # 4. DYNAMISCHER TEXT (Je nach Urkundentyp)
+        # 4. TEXT-INHALT
         self.set_font('Helvetica', '', 11.5)
         self.set_text_color(30, 30, 30)
         self.set_left_margin(35)
@@ -58,9 +57,10 @@ class RDF_Urkunden_Generator(FPDF):
         self.set_font('Helvetica', '', 11)
         self.multi_cell(0, 5.5, typ_daten['text_unten'], align='C')
 
-        # --- UNTERSCHRIFTEN-BLOCK ---
+        # --- UNTERSCHRIFT ---
         try:
             resp_sig = requests.get(aussteller['sig_url'], timeout=5)
+            # Positioniert für harmonisches Gesamtbild
             self.image(BytesIO(resp_sig.content), x=185, y=148, w=65)
         except: pass
 
@@ -74,7 +74,7 @@ class RDF_Urkunden_Generator(FPDF):
         
         return self.output(dest='S')
 
-# --- DATEN-KONFIGURATION ---
+# --- DATEN-BANK ---
 
 aussteller_liste = {
     "Dr. med. Leon Müller (Geschäftsführer)": {
@@ -95,57 +95,83 @@ urkundentypen = {
     "Rettungssanitäter": {
         "titel": "RETTUNGSSANITÄTER",
         "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Rettungssanitäter in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt die Berufsbezeichnung",
-        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der rettungsdienstlichen Aufgaben im Rahmen der Notfallrettung und Krankentransports sowie zur Durchführung der medizinischen Erstversorgung und Unterstützung am Einsatzort."
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der rettungsdienstlichen Aufgaben im Rahmen der Notfallrettung und Krankentransports sowie zur Durchführung der medizinischen Erstversorgung."
     },
     "Notfallsanitäter": {
         "titel": "NOTFALLSANITÄTER",
         "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Notfallsanitäter in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt die Berufsbezeichnung",
-        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der rettungsdienstlichen Aufgaben im Rahmen der Notfallrettung sowie zur Durchführung und Leitung der medizinischen Erstversorgung am Einsatzort."
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der rettungsdienstlichen Aufgaben im Rahmen der Notfallrettung sowie zur Durchführung und Leitung der medizinischen Erstversorgung."
     },
     "Notarzt": {
         "titel": "NOTARZT",
         "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung der Notarztqualifikation in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des RD-Gesetzes sowie der VchärQ wird hiermit die Erlaubnis erteilt, die Zusatzbezeichnung",
-        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der ärztlichen Aufgaben im Rahmen der Notfallrettung und zur Leitung der medizinischen Maßnahmen am Einsatzort."
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der ärztlichen Aufgaben im Rahmen der Notfallrettung und zur Leitung der medizinischen Maßnahmen."
+    },
+    "Leitender Notarzt": {
+        "titel": "LEITENDER NOTARZT",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Leitender Notarzt in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt die Funktionsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der medizinischen Führungsaufgaben bei Großschadensereignissen sowie zur Ausübung der medizinischen Weisungsbefugnis."
     },
     "Einsatzleiter RD": {
         "titel": "EINSATZLEITER RETTUNGSDIENST",
         "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Einsatzleiter Rettungsdienst in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt die Funktionsbezeichnung",
         "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der operativen Koordinierung komplexer Einsatzlagen sowie zur Führung der eingesetzten Rettungsmittel am Einsatzort."
+    },
+    "Org. Leiter RD": {
+        "titel": "ORGANISATORISCHER LEITER",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Organisatorischer Leiter Rettungsdienst in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt die Funktionsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der organisatorisch-taktischen Leitungsaufgaben bei Großeinsatzlagen sowie zur Koordination der Logistik und Raumordnung."
+    },
+    "Ausbilder RS": {
+        "titel": "AUSBILDER RS",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Ausbilder für Rettungssanitäter in Bezug auf die besondere fachliche und methodische Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt, die Funktionsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Vermittlung der Grundlagen der Notfallmedizin und des Krankentransports sowie zur Abnahme interner Leistungsnachweise."
+    },
+    "Ausbilder NFS": {
+        "titel": "AUSBILDER NFS",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Ausbilder für Notfallsanitäter in Bezug auf die besondere fachliche und pädagogische Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt, die Funktionsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Vermittlung invasiver Maßnahmen, der Durchführung von Simulationstrainings sowie zur fachlichen Vorbereitung auf Prüfungen."
+    },
+    "Ausbilder NA": {
+        "titel": "AUSBILDER NA",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Ausbilder für den Notarztdienst in Bezug auf die besondere fachliche und didaktische Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt, die Funktionsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Durchführung von klinisch-praktischen Einweisungen sowie zur Supervision von Notärzten in der Anerkennungsphase."
     }
 }
 
-# --- WEB-INTERFACE (Streamlit) ---
+# --- UI ---
 st.set_page_config(page_title="RDF Urkunden-Zentrum", page_icon="🚑")
-
 st.title("🚑 RDF Urkunden-Zentrum")
 
 with st.sidebar:
-    st.header("Konfiguration")
-    wahl_typ = st.selectbox("Urkundentyp", list(urkundentypen.keys()))
-    wahl_boss = st.selectbox("Aussteller / Unterschrift", list(aussteller_liste.keys()))
+    st.header("Einstellungen")
+    wahl_typ = st.selectbox("Welche Urkunde soll erstellt werden?", list(urkundentypen.keys()))
+    wahl_boss = st.selectbox("Wer stellt die Urkunde aus?", list(aussteller_liste.keys()))
+    st.divider()
+    st.caption("Falkenfurt Rettungsdienst-Verwaltung v2.0")
 
 with st.form("main_form"):
     c1, c2 = st.columns(2)
     with c1:
-        u_name = st.text_input("Name des Absolventen")
+        u_name = st.text_input("Vollständiger Name des Absolventen")
     with c2:
         u_geb = st.text_input("Geburtsdatum (TT.MM.JJJJ)")
     
-    u_datum = st.date_input("Prüfungsdatum", value=datetime.now()).strftime("%d.%m.%Y")
+    u_datum = st.date_input("Prüfungsdatum (auf Urkunde)", value=datetime.now()).strftime("%d.%m.%Y")
     
-    submit = st.form_submit_button("PDF generieren")
+    submit = st.form_submit_button("Vorschau & PDF Erstellen")
 
 if submit:
     if u_name and u_geb:
-        pdf = RDF_Urkunden_Generator()
+        pdf = RDF_Urkunden_Master()
         bytes_out = pdf.generate_pdf(u_name, u_geb, u_datum, aussteller_liste[wahl_boss], urkundentypen[wahl_typ])
         
-        st.success(f"{wahl_typ}-Urkunde für {u_name} erstellt!")
+        st.success(f"✓ {wahl_typ}-Urkunde für {u_name} wurde generiert!")
         st.download_button(
-            label="⬇️ PDF Herunterladen",
+            label="📄 PDF jetzt herunterladen",
             data=bytes(bytes_out),
-            file_name=f"Urkunde_{wahl_typ}_{u_name.replace(' ', '_')}.pdf",
+            file_name=f"Urkunde_{wahl_typ.replace(' ', '_')}_{u_name.replace(' ', '_')}.pdf",
             mime="application/pdf"
         )
     else:
-        st.error("Bitte Namen und Geburtsdatum angeben.")
+        st.error("Bitte geben Sie einen Namen und ein Geburtsdatum ein!")
