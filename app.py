@@ -28,7 +28,7 @@ class RDF_Urkunden_Master(FPDF):
         except: pass
 
         # 2. TITEL
-        self.set_y(75) 
+        self.set_y(70) 
         self.set_font('Helvetica', 'B', 38)
         self.set_text_color(0, 14, 43)
         self.cell(0, 15, 'URKUNDE', align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
