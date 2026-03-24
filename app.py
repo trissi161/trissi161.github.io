@@ -24,11 +24,11 @@ class RDF_Urkunden_Master(FPDF):
         logo_url = "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/Bild_2026-03-24_235639621.png"
         try:
             response = requests.get(logo_url, timeout=5)
-            self.image(BytesIO(response.content), x=126, y=12, w=45) 
+            self.image(BytesIO(response.content), x=128, y=12, w=40) 
         except: pass
 
         # 2. TITEL
-        self.set_y(55)
+        self.set_y(75) 
         self.set_font('Helvetica', 'B', 38)
         self.set_text_color(0, 14, 43)
         self.cell(0, 15, 'URKUNDE', align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
