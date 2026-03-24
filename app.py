@@ -21,7 +21,7 @@ class RDF_Urkunden_Master(FPDF):
         self.draw_border()
         
         # 1. LOGO
-        logo_url = "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/logo.png"
+        logo_url = "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/Bild_2026-03-24_235639621.png"
         try:
             response = requests.get(logo_url, timeout=5)
             self.image(BytesIO(response.content), x=126, y=12, w=45) 
