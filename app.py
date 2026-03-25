@@ -87,16 +87,28 @@ class Falkenfurt_HR_Master(FPDF):
         self.footer_sigs(d['bearbeiter_name'])
         return self.output(dest='S')
 
-# --- KONFIGURATION ---
+# --- DATEN ---
 aussteller_liste = {
     "Dr. med. Leon Müller (Geschäftsführer)": {"name": "Dr. med. Leon Müller", "amt": "Geschäftsführer", "sig_url": "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/Unterschriftleon.png"},
     "Dr. med. Leon Müller (ÄLRD)": {"name": "Dr. med. Leon Müller", "amt": "Ärztlicher Leiter Rettungsdienst", "sig_url": "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/Unterschriftleon.png"},
     "Thomas Schäfer (Leiter RD)": {"name": "Thomas Schäfer", "amt": "Leiter Rettungsdienst", "sig_url": "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/Thomas.png"}
 }
 urkundentypen = {
-    "Rettungssanitäter": {"titel": "RETTUNGSSANITÄTER", "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als RS erfolgreich abgelegt...", "text_unten": "Diese Urkunde berechtigt zur Wahrnehmung der Aufgaben..."},
-    "Notfallsanitäter": {"titel": "NOTFALLSANITÄTER", "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als NFS erfolgreich abgelegt...", "text_unten": "Diese Urkunde berechtigt zur Leitung medizinischer Erstversorgung..."},
-    "Ernennung": {"titel": "POSITION", "text_oben": "wird am heutigen Tage ernannt...", "text_unten": "Diese Urkunde berechtigt zur Führung des Fachbereiches..."}
+    "Rettungssanitäter": {
+        "titel": "RETTUNGSSANITÄTER",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Rettungssanitäter in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt die Berufsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der rettungsdienstlichen Aufgaben im Rahmen der Notfallrettung und Krankentransports sowie zur Durchführung der medizinischen Erstversorgung."
+    },
+    "Notfallsanitäter": {
+        "titel": "NOTFALLSANITÄTER",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Notfallsanitäter in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt die Berufsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der rettungsdienstlichen Aufgaben im Rahmen der Notfallrettung sowie zur Durchführung und Leitung der medizinischen Erstversorgung."
+    },
+    "Ernennung": {
+        "titel": "POSITION",
+        "text_oben": "wird am heutigen Tage in Bezug auf die besondere fachliche und persönliche Eignung für den Rettungsdienst der Stadt Falkenfurt ernannt. Auf Grundlage der internen Organisationsrichtlinien wird hiermit die Erlaubnis erteilt, die Position",
+        "text_unten": "wahrzunehmen. Diese Urkunde berechtigt zur Führung des zugeordneten Fachbereiches, zur Ausübung der damit verbundenen Weisungsbefugnisse sowie zur eigenverantwortlichen Leitung der zugewiesenen Dienstgeschäfte innerhalb des Stadtgebietes von Falkenfurt und des zugehörigen Rettungsdienstbereiches."
+    }
 }
 ernennungs_rollen = ["Wachleiter", "Leiter Rettungsdienstschule", "Leiter Rettungsdienst", "Personalabteilungsleitung"]
 
@@ -104,6 +116,7 @@ ernennungs_rollen = ["Wachleiter", "Leiter Rettungsdienstschule", "Leiter Rettun
 st.set_page_config(page_title="RDF Verwaltung", page_icon="🚑", layout="centered")
 t1, t2 = st.tabs(["🎓 Urkunden-Zentrum", "📋 Personalwesen (HR)"])
 
+# --- TAB 1: URKUNDEN ---
 with t1:
     st.header("Urkunden-Generator")
     with st.sidebar:
@@ -112,61 +125,74 @@ with t1:
         extra_pos = st.selectbox("Position", ernennungs_rollen) if wahl_typ == "Ernennung" else None
         wahl_boss = st.selectbox("Aussteller", list(aussteller_liste.keys()))
     
+    u_pdf_data = None
     with st.form("u_form"):
         c1, c2 = st.columns(2)
-        u_name = c1.text_input("Name")
-        u_geb = c2.text_input("Geburtsdatum")
-        u_datum = st.date_input("Datum", value=datetime.now()).strftime("%d.%m.%Y")
-        if st.form_submit_button("Urkunde erstellen"):
-            pdf = RDF_Urkunden_Master()
-            out = pdf.generate_pdf(u_name, u_geb, u_datum, aussteller_liste[wahl_boss], urkundentypen[wahl_typ], extra_pos)
-            st.download_button("⬇️ Download Urkunde", data=bytes(out), file_name="Urkunde.pdf")
+        u_name = c1.text_input("Name des Absolventen")
+        u_geb = c2.text_input("Geburtsdatum (TT.MM.JJJJ)")
+        u_datum = st.date_input("Prüfungsdatum", value=datetime.now()).strftime("%d.%m.%Y")
+        u_submit = st.form_submit_button("Urkunde generieren")
+        if u_submit:
+            if u_name and u_geb:
+                pdf = RDF_Urkunden_Master()
+                u_pdf_data = pdf.generate_pdf(u_name, u_geb, u_datum, aussteller_liste[wahl_boss], urkundentypen[wahl_typ], extra_pos)
 
+    if u_pdf_data:
+        st.success("✅ Urkunde bereit!")
+        st.download_button("⬇️ Urkunde herunterladen", data=bytes(u_pdf_data), file_name=f"Urkunde_{u_name.replace(' ','_')}.pdf")
+
+# --- TAB 2: HR ---
 with t2:
     st.header("HR Dokumenten-Management")
     hr_wahl = st.selectbox("Dokument wählen", ["Kündigung (Angestellt)", "Kündigung (Azubi)", "Abmahnung"])
     
-    # Wir bereiten eine Variable für das PDF vor
-    pdf_data = None
-    pdf_filename = "Dokument.pdf"
-
+    hr_pdf_data = None
     with st.form("hr_form_universal"):
         empfaenger = st.text_input("Name des Empfängers")
-        bearbeiter = st.text_input("Dein Name (Unterschrift links)")
+        bearbeiter = st.text_input("Unterschrift links (Dein Name)")
         d_heute = st.date_input("Heutiges Datum", value=datetime.now()).strftime("%d.%m.%Y")
         
         if hr_wahl == "Kündigung (Angestellt)":
-            d_ende = st.date_input("Kündigungsdatum zum", value=datetime.now()).strftime("%d.%m.%Y")
-            text = f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit kündigen wir das bestehende Arbeitsverhältnis ordentlich zum {d_ende}.\n\nHilfsweise kündigen wir zum nächstmöglichen Termin.\n\nFür Ihren weiteren Weg alles Gute."
+            d_ende = st.date_input("Kündigung zum", value=datetime.now()).strftime("%d.%m.%Y")
             titel = "KÜNDIGUNG DES ARBEITSVERHÄLTNISSES"
+            text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\n"
+                    f"hiermit kündigen wir das mit Ihnen bestehende Arbeitsverhältnis ordentlich unter Einhaltung der vertraglich vereinbarten Kündigungsfrist zum {d_ende}.\n\n"
+                    f"Hilfsweise kündigen wir zum nächstmöglichen Termin.\n\n"
+                    f"Wir weisen Sie ausdrücklich darauf hin, dass Sie gemäß § 38 Abs. 1 SGB III verpflichtet sind, sich spätestens drei Monate vor Beendigung des Arbeitsverhältnisses persönlich bei der Agentur für Arbeit arbeitssuchend zu melden. Die Einhaltung dieser Frist ist Voraussetzung für den Bezug von Arbeitslosengeld.\n\n"
+                    f"Bitte geben Sie sämtliche in Ihrem Besitz befindliche Ausrüstungsgegenstände, Schlüssel sowie Dienstausweise bis spätestens zu Ihrem letzten Arbeitstag bei der Dienststellenleitung ab.\n\n"
+                    f"Über Ihren noch offenen Resturlaub sowie die Abgeltung etwaiger Überstunden werden wir Sie gesondert informieren. Ein qualifiziertes Arbeitszeugnis wird Ihnen zeitnah ausgestellt.\n\n"
+                    f"Für Ihren weiteren Weg wünschen wir Ihnen alles Gute.")
         
         elif hr_wahl == "Kündigung (Azubi)":
             beruf = st.text_input("Ausbildungsberuf", value="Notfallsanitäter")
-            d_ende = st.date_input("Enddatum", value=datetime.now()).strftime("%d.%m.%Y")
-            text = f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit kündigen wir das Ausbildungsverhältnis zum/zur {beruf} zum {d_ende}.\n\nIn der Probezeit erfolgt dies gemäß § 22 Abs. 1 BBiG ohne Angabe von Gründen."
-            titel = "KÜNDIGUNG DES AUSBILDUNGSVERHÄLTNISSES"
+            d_ende = st.date_input("Ende zum", value=datetime.now()).strftime("%d.%m.%Y")
+            titel = "KÜNDIGUNG DES BERUFSAUSBILDUNGSVERHÄLTNISSES"
+            text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\n"
+                    f"hiermit kündigen wir das mit Ihnen bestehende Ausbildungsverhältnis zum/zur {beruf} "
+                    f"unter Einhaltung der maßgeblichen Fristen zum {d_ende}.\n\n"
+                    f"Sofern Sie sich noch in der Probezeit befinden, erfolgt diese Kündigung gemäß § 22 Abs. 1 BBiG ohne Einhaltung einer Kündigungsfrist und ohne Angabe von Gründen.\n\n"
+                    f"Wir weisen Sie darauf hin, dass Sie sich innerhalb von drei Tagen nach Erhalt dieses Schreibens bei der Agentur für Arbeit arbeitssuchend melden müssen, um Nachteile beim Bezug von Leistungen zu vermeiden.\n\n"
+                    f"Bitte geben Sie sämtliche Lehrmaterialien, Dienstkleidung, Schlüssel sowie Ihren Dienstausweis bis zum letzten Arbeitstag bei der Ausbildungsleitung ab. Ein Ausbildungszeugnis wird Ihnen nach Beendigung ausgehändigt.\n\n"
+                    f"Wir wünschen Ihnen für Ihren weiteren Werdegang viel Erfolg.")
 
         elif hr_wahl == "Abmahnung":
-            grund = st.text_area("Sachverhalt (Was ist passiert?)")
+            grund = st.text_area("Sachverhalt (Fehlverhalten)")
             v_datum = st.date_input("Vorfall am").strftime("%d.%m.%Y")
             v_zeit = st.text_input("Uhrzeit", value="08:00")
-            text = f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit mahnen wir Sie wegen folgendem Fehlverhalten ab:\n\nSACHVERHALT: {grund}\nDATUM/ZEIT: {v_datum} um {v_zeit} Uhr.\n\nWir weisen darauf hin, dass im Wiederholungsfall die Kündigung droht."
             titel = "ABMAHNUNG"
+            text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\n"
+                    f"hiermit mahnen wir Sie wegen des folgenden arbeitsvertraglichen Fehlverhaltens förmlich ab:\n\n"
+                    f"SACHVERHALT: {grund}\n"
+                    f"DATUM/ZEIT: {v_datum} um {v_zeit} Uhr\n\n"
+                    f"Durch dieses Verhalten verletzen Sie Ihre arbeitsvertraglichen Pflichten in erheblichem Maße. Wir fordern Sie hiermit auf, Ihr Verhalten umgehend zu korrigieren und Ihren vertraglich vereinbarten Pflichten künftig ordnungsgemäß und pünktlich nachzukommen.\n\n"
+                    f"Wir weisen Sie ausdrücklich darauf hin, dass wir im Falle einer Wiederholung oder bei weiteren Pflichtverletzungen das Arbeitsverhältnis kündigen werden. Eine Kopie dieser Abmahnung wird zu Ihrer Personalakte genommen.\n\n"
+                    f"Wir hoffen auf eine künftig reibungslose Zusammenarbeit.")
 
-        # Der Submit-Button erstellt NUR die Daten
-        submitted = st.form_submit_button("Dokument vorschaufertig machen")
-        if submitted:
+        if st.form_submit_button("Dokument vorschaufertig machen"):
             if empfaenger and bearbeiter:
                 pdf_hr = Falkenfurt_HR_Master()
-                pdf_data = pdf_hr.generate_doc(titel, text, {'datum_heute': d_heute, 'bearbeiter_name': bearbeiter})
-                pdf_filename = f"{hr_wahl.replace(' ', '_')}_{empfaenger.replace(' ', '_')}.pdf"
+                hr_pdf_data = pdf_hr.generate_doc(titel, text, {'datum_heute': d_heute, 'bearbeiter_name': bearbeiter})
 
-    # DER DOWNLOAD-BUTTON MUSS HIER STEHEN (Außerhalb des 'with st.form')
-    if pdf_data:
+    if hr_pdf_data:
         st.success(f"✅ {hr_wahl} bereit!")
-        st.download_button(
-            label="⬇️ PDF jetzt herunterladen",
-            data=bytes(pdf_data),
-            file_name=pdf_filename,
-            mime="application/pdf"
-        )
+        st.download_button("⬇️ Dokument herunterladen", data=bytes(hr_pdf_data), file_name=f"{hr_wahl.replace(' ','_')}.pdf")
