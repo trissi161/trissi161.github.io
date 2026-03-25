@@ -234,3 +234,4 @@ with t2:
                 hr_pdf_data = pdf_k.generate_doc("KÜNDIGUNG", text, {'datum_heute': d_heute, 'bearbeiter_name': bearbeiter})
 
     if hr_pdf_data: st.download_button("⬇️ Download Dokument", data=bytes(hr_pdf_data), file_name=f"{hr_wahl}.pdf")
+        
