@@ -46,7 +46,7 @@ class RDF_Urkunden_Master(FPDF):
         self.multi_cell(85, 4.5, info, align='C')
         return self.output(dest='S')
 
-# --- KLASSE 2: PERSONALWESEN (HOCHFORMAT) ---
+# --- KLASSE 2: HR DOKUMENTE (HOCHFORMAT) ---
 class Falkenfurt_HR_Master(FPDF):
     def header(self):
         self.set_fill_color(0, 14, 43); self.rect(0, 0, 210, 45, 'F')
@@ -61,19 +61,13 @@ class Falkenfurt_HR_Master(FPDF):
         self.set_text_color(255, 215, 0); self.set_font('Helvetica', 'B', 12)
         self.set_xy(70, 35); self.cell(0, 5, "PERSONALABTEILUNG / DIENSTLEITUNG")
 
-    def generate_kuendigung(self, d):
-        self.add_page(); self.set_top_margin(60)
-        self.ln(20); self.set_font('Helvetica', 'B', 16); self.set_text_color(0, 14, 43)
-        self.cell(0, 10, "KÜNDIGUNG DES ARBEITSVERHÄLTNISSES", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        self.set_font('Helvetica', '', 10); self.cell(0, 10, f"Datum: {d['datum_heute']}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        self.ln(10); self.set_font('Helvetica', '', 11); self.set_text_color(0, 0, 0)
-        text = (f"Sehr geehrte/r Frau/Herr {d['name_empfaenger']},\n\nhiermit kündigen wir das mit Ihnen bestehende Arbeitsverhältnis ordentlich unter Einhaltung der vertraglich vereinbarten Kündigungsfrist zum {d['datum_ende']}.\n\nHilfsweise kündigen wir zum nächstmöglichen Termin.\n\nWir weisen Sie ausdrücklich darauf hin, dass Sie gemäß § 38 Abs. 1 SGB III verpflichtet sind, sich spätestens drei Monate vor Beendigung arbeitssuchend zu melden.\n\nBitte geben Sie sämtliche Ausrüstungsgegenstände bis spätestens zu Ihrem letzten Arbeitstag ab.\n\nFür Ihren weiteren Weg wünschen wir Ihnen alles Gute.")
-        self.multi_cell(0, 7, text)
+    def footer_sigs(self, bearbeiter_name):
         y_linie = 245
         self.set_font('Courier', 'I', 14); self.set_text_color(0, 32, 96); self.set_xy(15, y_linie - 12) 
-        self.cell(70, 10, d['bearbeiter_name'], align='C')
-        self.line(15, y_linie, 85, y_linie); self.set_text_color(0, 0, 0); self.set_font('Helvetica', 'B', 10)
-        self.set_xy(15, y_linie + 2); self.cell(70, 7, d['bearbeiter_name'], align='C')
+        self.cell(70, 10, bearbeiter_name, align='C')
+        self.set_draw_color(0, 0, 0); self.line(15, y_linie, 85, y_linie)
+        self.set_text_color(0, 0, 0); self.set_font('Helvetica', 'B', 10)
+        self.set_xy(15, y_linie + 2); self.cell(70, 7, bearbeiter_name, align='C')
         self.set_font('Helvetica', '', 8); self.set_xy(15, y_linie + 7); self.cell(70, 5, "Personalabteilung", align='C')
         try:
             sig_url = "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/Unterschriftleon.png"
@@ -82,9 +76,18 @@ class Falkenfurt_HR_Master(FPDF):
         self.line(115, y_linie, 185, y_linie); self.set_font('Helvetica', 'B', 10)
         self.set_xy(115, y_linie + 2); self.cell(70, 7, "Dr. med. Leon Müller", align='C')
         self.set_font('Helvetica', '', 8); self.set_xy(115, y_linie + 7); self.cell(70, 5, "Geschäftsführung", align='C')
+
+    def generate_doc(self, titel, text, d):
+        self.add_page(); self.set_top_margin(60)
+        self.ln(20); self.set_font('Helvetica', 'B', 16); self.set_text_color(0, 14, 43)
+        self.cell(0, 10, titel, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        self.set_font('Helvetica', '', 10); self.cell(0, 10, f"Datum: {d['datum_heute']}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        self.ln(10); self.set_font('Helvetica', '', 11); self.set_text_color(0, 0, 0)
+        self.multi_cell(0, 7, text)
+        self.footer_sigs(d['bearbeiter_name'])
         return self.output(dest='S')
 
-# --- DATEN ---
+# --- KONFIGURATION ---
 aussteller_liste = {
     "Dr. med. Leon Müller (Geschäftsführer)": {"name": "Dr. med. Leon Müller", "amt": "Geschäftsführer", "sig_url": "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/Unterschriftleon.png"},
     "Dr. med. Leon Müller (ÄLRD)": {"name": "Dr. med. Leon Müller", "amt": "Ärztlicher Leiter Rettungsdienst", "sig_url": "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/Unterschriftleon.png"},
@@ -97,13 +100,11 @@ urkundentypen = {
 }
 ernennungs_rollen = ["Wachleiter", "Leiter Rettungsdienstschule", "Leiter Rettungsdienst", "Personalabteilungsleitung"]
 
-# --- APP LAYOUT ---
+# --- APP ---
 st.set_page_config(page_title="RDF Verwaltung", page_icon="🚑", layout="centered")
+t1, t2 = st.tabs(["🎓 Urkunden-Zentrum", "📋 Personalwesen (HR)"])
 
-tab1, tab2 = st.tabs(["🎓 Urkunden-Zentrum", "📋 Personalwesen (HR)"])
-
-# --- TAB 1: URKUNDEN ---
-with tab1:
+with t1:
     st.header("Urkunden-Generator")
     with st.sidebar:
         st.subheader("Urkunden-Settings")
@@ -112,32 +113,44 @@ with tab1:
         wahl_boss = st.selectbox("Aussteller", list(aussteller_liste.keys()))
     
     with st.form("u_form"):
-        col1, col2 = st.columns(2)
-        u_name = col1.text_input("Name")
-        u_geb = col2.text_input("Geburtsdatum")
+        c1, c2 = st.columns(2)
+        u_name = c1.text_input("Name")
+        u_geb = c2.text_input("Geburtsdatum")
         u_datum = st.date_input("Datum", value=datetime.now()).strftime("%d.%m.%Y")
         if st.form_submit_button("Urkunde erstellen"):
-            if u_name and u_geb:
-                pdf = RDF_Urkunden_Master()
-                out = pdf.generate_pdf(u_name, u_geb, u_datum, aussteller_liste[wahl_boss], urkundentypen[wahl_typ], extra_pos)
-                st.download_button("⬇️ Download Urkunde", data=bytes(out), file_name="Urkunde.pdf")
+            pdf = RDF_Urkunden_Master()
+            out = pdf.generate_pdf(u_name, u_geb, u_datum, aussteller_liste[wahl_boss], urkundentypen[wahl_typ], extra_pos)
+            st.download_button("⬇️ Download Urkunde", data=bytes(out), file_name="Urkunde.pdf")
 
-# --- TAB 2: HR DOKUMENTE ---
-with tab2:
-    st.header("HR Dokumente & Kündigungen")
-    hr_typ = st.selectbox("Dokumenten-Typ", ["Kündigungsschreiben"])
+with t2:
+    st.header("HR Dokumenten-Management")
+    hr_wahl = st.selectbox("Dokument wählen", ["Kündigung (Angestellt)", "Kündigung (Azubi)", "Abmahnung"])
     
-    if hr_typ == "Kündigungsschreiben":
-        with st.form("hr_form"):
-            name_e = st.text_input("Name des Mitarbeiters")
-            bearbeiter = st.text_input("Dein Name (Personalabteilung)")
-            colA, colB = st.columns(2)
-            d_heute = colA.date_input("Heutiges Datum", value=datetime.now()).strftime("%d.%m.%Y")
-            d_ende = colB.date_input("Kündigungstermin zum", value=datetime.now()).strftime("%d.%m.%Y")
-            
-            if st.form_submit_button("Kündigung generieren"):
-                if name_e and bearbeiter:
-                    pdf_hr = Falkenfurt_HR_Master()
-                    d = {'name_empfaenger': name_e, 'bearbeiter_name': bearbeiter, 'datum_heute': d_heute, 'datum_ende': d_ende}
-                    out_hr = pdf_hr.generate_kuendigung(d)
-                    st.download_button("⬇️ Download Kündigung", data=bytes(out_hr), file_name=f"Kuendigung_{name_e}.pdf")
+    with st.form("hr_form_universal"):
+        empfaenger = st.text_input("Name des Empfängers")
+        bearbeiter = st.text_input("Dein Name (Unterschrift links)")
+        d_heute = st.date_input("Heutiges Datum", value=datetime.now()).strftime("%d.%m.%Y")
+        
+        # Dynamische Felder je nach Typ
+        if hr_wahl == "Kündigung (Angestellt)":
+            d_ende = st.date_input("Kündigungsdatum zum", value=datetime.now()).strftime("%d.%m.%Y")
+            text = f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit kündigen wir das bestehende Arbeitsverhältnis ordentlich zum {d_ende}.\n\nHilfsweise kündigen wir zum nächstmöglichen Termin.\n\nFür Ihren weiteren Weg alles Gute."
+            titel = "KÜNDIGUNG DES ARBEITSVERHÄLTNISSES"
+        
+        elif hr_wahl == "Kündigung (Azubi)":
+            beruf = st.text_input("Ausbildungsberuf", value="Notfallsanitäter")
+            d_ende = st.date_input("Enddatum", value=datetime.now()).strftime("%d.%m.%Y")
+            text = f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit kündigen wir das Ausbildungsverhältnis zum/zur {beruf} zum {d_ende}.\n\nIn der Probezeit erfolgt dies gemäß § 22 Abs. 1 BBiG ohne Angabe von Gründen."
+            titel = "KÜNDIGUNG DES AUSBILDUNGSVERHÄLTNISSES"
+
+        elif hr_wahl == "Abmahnung":
+            grund = st.text_area("Sachverhalt (Was ist passiert?)")
+            v_datum = st.date_input("Vorfall am").strftime("%d.%m.%Y")
+            v_zeit = st.text_input("Uhrzeit", value="08:00")
+            text = f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit mahnen wir Sie wegen folgendem Fehlverhalten ab:\n\nSACHVERHALT: {grund}\nDATUM/ZEIT: {v_datum} um {v_zeit} Uhr.\n\nWir weisen darauf hin, dass im Wiederholungsfall die Kündigung droht."
+            titel = "ABMAHNUNG"
+
+        if st.form_submit_button("Dokument generieren"):
+            pdf_hr = Falkenfurt_HR_Master()
+            out_hr = pdf_hr.generate_doc(titel, text, {'datum_heute': d_heute, 'bearbeiter_name': bearbeiter})
+            st.download_button("⬇️ Download PDF", data=bytes(out_hr), file_name=f"{hr_wahl}.pdf")
