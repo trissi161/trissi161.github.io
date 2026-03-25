@@ -126,12 +126,15 @@ with t2:
     st.header("HR Dokumenten-Management")
     hr_wahl = st.selectbox("Dokument wählen", ["Kündigung (Angestellt)", "Kündigung (Azubi)", "Abmahnung"])
     
+    # Wir bereiten eine Variable für das PDF vor
+    pdf_data = None
+    pdf_filename = "Dokument.pdf"
+
     with st.form("hr_form_universal"):
         empfaenger = st.text_input("Name des Empfängers")
         bearbeiter = st.text_input("Dein Name (Unterschrift links)")
         d_heute = st.date_input("Heutiges Datum", value=datetime.now()).strftime("%d.%m.%Y")
         
-        # Dynamische Felder je nach Typ
         if hr_wahl == "Kündigung (Angestellt)":
             d_ende = st.date_input("Kündigungsdatum zum", value=datetime.now()).strftime("%d.%m.%Y")
             text = f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit kündigen wir das bestehende Arbeitsverhältnis ordentlich zum {d_ende}.\n\nHilfsweise kündigen wir zum nächstmöglichen Termin.\n\nFür Ihren weiteren Weg alles Gute."
@@ -150,7 +153,20 @@ with t2:
             text = f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit mahnen wir Sie wegen folgendem Fehlverhalten ab:\n\nSACHVERHALT: {grund}\nDATUM/ZEIT: {v_datum} um {v_zeit} Uhr.\n\nWir weisen darauf hin, dass im Wiederholungsfall die Kündigung droht."
             titel = "ABMAHNUNG"
 
-        if st.form_submit_button("Dokument generieren"):
-            pdf_hr = Falkenfurt_HR_Master()
-            out_hr = pdf_hr.generate_doc(titel, text, {'datum_heute': d_heute, 'bearbeiter_name': bearbeiter})
-            st.download_button("⬇️ Download PDF", data=bytes(out_hr), file_name=f"{hr_wahl}.pdf")
+        # Der Submit-Button erstellt NUR die Daten
+        submitted = st.form_submit_button("Dokument vorschaufertig machen")
+        if submitted:
+            if empfaenger and bearbeiter:
+                pdf_hr = Falkenfurt_HR_Master()
+                pdf_data = pdf_hr.generate_doc(titel, text, {'datum_heute': d_heute, 'bearbeiter_name': bearbeiter})
+                pdf_filename = f"{hr_wahl.replace(' ', '_')}_{empfaenger.replace(' ', '_')}.pdf"
+
+    # DER DOWNLOAD-BUTTON MUSS HIER STEHEN (Außerhalb des 'with st.form')
+    if pdf_data:
+        st.success(f"✅ {hr_wahl} bereit!")
+        st.download_button(
+            label="⬇️ PDF jetzt herunterladen",
+            data=bytes(pdf_data),
+            file_name=pdf_filename,
+            mime="application/pdf"
+        )
