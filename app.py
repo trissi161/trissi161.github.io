@@ -245,10 +245,45 @@ urkundentypen = {
         "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Notfallsanitäter in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt die Berufsbezeichnung",
         "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der rettungsdienstlichen Aufgaben im Rahmen der Notfallrettung sowie zur Durchführung und Leitung der medizinischen Erstversorgung."
     },
+    "Notarzt": {
+        "titel": "NOTARZT",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung der Notarztqualifikation in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des RD-Gesetzes sowie der VchärQ wird hiermit die Erlaubnis erteilt, die Zusatzbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der ärztlichen Aufgaben im Rahmen der Notfallrettung und zur Leitung der medizinischen Maßnahmen."
+    },
+    "Leitender Notarzt": {
+        "titel": "LEITENDER NOTARZT",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Leitender Notarzt in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt die Funktionsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der medizinischen Führungsaufgaben bei Großschadensereignissen sowie zur Ausübung der medizinischen Weisungsbefugnis."
+    },
+    "Einsatzleiter RD": {
+        "titel": "EINSATZLEITER RETTUNGSDIENST",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Einsatzleiter Rettungsdienst in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt die Funktionsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der operativen Koordinierung komplexer Einsatzlagen sowie zur Führung der eingesetzten Rettungsmittel am Einsatzort."
+    },
+    "Org. Leiter RD": {
+        "titel": "ORGANISATORISCHER LEITER",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Organisatorischer Leiter Rettungsdienst in Bezug auf die besondere fachliche Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt die Funktionsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Wahrnehmung der organisatorisch-taktischen Leitungsaufgaben bei Großeinsatzlagen sowie zur Koordination der Logistik und Raumordnung."
+    },
+    "Ausbilder RS": {
+        "titel": "AUSBILDER RS",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Ausbilder für Rettungssanitäter in Bezug auf die besondere fachliche und methodische Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt, die Funktionsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Vermittlung der Grundlagen der Notfallmedizin und des Krankentransports sowie zur Abnahme interner Leistungsnachweise."
+    },
+    "Ausbilder NFS": {
+        "titel": "AUSBILDER NFS",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Ausbilder für Notfallsanitäter in Bezug auf die besondere fachliche und pädagogische Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt, die Funktionsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Vermittlung invasiver Maßnahmen, der Durchführung von Simulationstrainings sowie zur fachlichen Vorbereitung auf Prüfungen."
+    },
+    "Ausbilder NA": {
+        "titel": "AUSBILDER NA",
+        "text_oben": "hat am heutigen Tage die Prüfung zur Anerkennung als Ausbilder für den Notarztdienst in Bezug auf die besondere fachliche und didaktische Eignung für den Einsatz im Rettungsdienst der Stadt Falkenfurt erfolgreich abgelegt. Auf Grundlage von § 12 Abs. 5 des einschlägigen Rettungsdienstgesetzes wird hiermit die Erlaubnis erteilt, die Funktionsbezeichnung",
+        "text_unten": "zu führen. Diese Urkunde berechtigt zur Durchführung von klinisch-praktischen Einweisungen sowie zur Supervision von Notärzten in der Anerkennungsphase."
+    },
     "Ernennung": {
         "titel": "POSITION",
         "text_oben": "wird am heutigen Tage in Bezug auf die besondere fachliche und persönliche Eignung für den Rettungsdienst der Stadt Falkenfurt ernannt. Auf Grundlage der internen Organisationsrichtlinien wird hiermit die Erlaubnis erteilt, die Position",
-        "text_unten": "wahrzunehmen. Diese Urkunde berechtigt zur Führung des zugeordneten Fachbereiches, zur Ausübung der damit verbundenen Weisungsbefugnisse sowie zur eigenverantwortlichen Leitung der zugewiesenen Dienstgeschäfte innerhalb des Stadtgebietes von Falkenfurt."
+        "text_unten": "wahrzunehmen. Diese Urkunde berechtigt zur Führung des zugeordneten Fachbereiches, zur Ausübung der damit verbundenen Weisungsbefugnisse sowie zur eigenverantwortlichen Leitung der zugewiesenen Dienstgeschäfte."
     }
 }
 
