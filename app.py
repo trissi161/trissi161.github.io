@@ -18,7 +18,7 @@ class RDF_Urkunden_Master(FPDF):
         self.set_draw_color(255, 215, 0) 
         self.rect(13, 13, 271, 184) 
 
-def generate_pdf(self, name, geburtsdatum, datum, aussteller, typ_daten, extra_pos=None):
+    def generate_pdf(self, name, geburtsdatum, datum, aussteller, typ_daten, extra_pos=None):
         self.add_page(orientation='L')
         self.set_auto_page_break(auto=False)
         self.draw_border()
@@ -66,23 +66,21 @@ def generate_pdf(self, name, geburtsdatum, datum, aussteller, typ_daten, extra_p
         self.set_text_color(30, 30, 30)
         self.multi_cell(0, 5, typ_daten['text_unten'], align='C')
         
-        # 6. UNTERSCHRIFTENFELD (NUR EINMAL!)
+        # 6. UNTERSCHRIFTENFELD
         try:
             resp_sig = requests.get(aussteller['sig_url'], timeout=5)
-            # Positioniert die Bild-Unterschrift über der Linie
             self.image(BytesIO(resp_sig.content), x=190, y=142, w=50)
         except: pass
         
         self.set_draw_color(0, 14, 43)
-        self.line(185, 172, 270, 172) # Die Linie
+        self.line(185, 172, 270, 172) 
         
-        self.set_xy(185, 173) # Text direkt unter die Linie
+        self.set_xy(185, 173) 
         self.set_font('Helvetica', 'B', 9)
         info = f"{aussteller['name']}\n{aussteller['amt']}\nFalkenfurt, den {datum}"
         self.multi_cell(85, 4, info, align='C')
         
         return self.output(dest='S')
-
 
 class Falkenfurt_HR_Master(FPDF):
     """Klasse für Standard HR-Dokumente (Kündigung, Abmahnung)."""
