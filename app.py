@@ -18,43 +18,42 @@ class RDF_Urkunden_Master(FPDF):
         self.set_draw_color(255, 215, 0) 
         self.rect(13, 13, 271, 184) 
 
-    def generate_pdf(self, name, geburtsdatum, datum, aussteller, typ_daten, extra_pos=None):
+def generate_pdf(self, name, geburtsdatum, datum, aussteller, typ_daten, extra_pos=None):
         self.add_page(orientation='L')
         self.set_auto_page_break(auto=False)
         self.draw_border()
         
-        # 1. LOGO POSITION (Höher und zentriert)
+        # 1. LOGO POSITION
         logo_url = "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/logo.png"
         try:
             resp = requests.get(logo_url, timeout=5)
             self.image(BytesIO(resp.content), x=130, y=15, w=38) 
         except: pass
         
-        # 2. TEXT-START (Deutlich tiefer bei y=70, um Überlappung zu vermeiden)
-        self.set_y(70)
+        # 2. TITEL & NAME
+        self.set_y(65)
         self.set_font('Helvetica', 'B', 38)
         self.set_text_color(0, 14, 43)
         self.cell(0, 15, 'URKUNDE', align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         
-        # 3. NAME & DATUM (Mehr Zeilenabstand durch ln)
         self.set_font('Helvetica', 'B', 28)
         self.cell(0, 15, name.upper(), align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         
         self.set_font('Helvetica', 'I', 13)
         self.cell(0, 8, f'geboren am {geburtsdatum}', align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         
-        self.ln(10) # Großer Abstand zum Fließtext
+        self.ln(10)
         
-# Fließtext oben (Etwas kleiner, damit mehr Platz bleibt)
-        self.set_font('Helvetica', '', 10.5) 
+        # 3. FLIESSTEXT OBEN
+        self.set_font('Helvetica', '', 10.5)
         self.set_text_color(30, 30, 30)
         self.set_left_margin(35)
         self.set_right_margin(35)
-        self.multi_cell(0, 5, typ_daten['text_oben'], align='C') # 5 ist die Zeilenhöhe
+        self.multi_cell(0, 5, typ_daten['text_oben'], align='C')
         
         self.ln(4)
         
-        # Der Titel (NOTARZT)
+        # 4. DIE POSITION (z.B. NOTARZT)
         self.set_font('Helvetica', 'B', 22)
         self.set_text_color(0, 14, 43)
         anzeige_titel = extra_pos if extra_pos else typ_daten['titel']
@@ -62,37 +61,25 @@ class RDF_Urkunden_Master(FPDF):
         
         self.ln(4)
         
-        # Fließtext unten (WICHTIG: Schriftgröße auf 10.5 reduziert!)
+        # 5. FLIESSTEXT UNTEN
         self.set_font('Helvetica', '', 10.5)
         self.set_text_color(30, 30, 30)
-        # Hier war der Fehler: 5 steht für einen sauberen Zeilenabstand
-        self.multi_cell(0, 5, typ_daten['text_unten'], align='C') 
+        self.multi_cell(0, 5, typ_daten['text_unten'], align='C')
         
-        # Unterschriftenbereich (Fixiert am unteren Rand)
+        # 6. UNTERSCHRIFTENFELD (NUR EINMAL!)
         try:
             resp_sig = requests.get(aussteller['sig_url'], timeout=5)
+            # Positioniert die Bild-Unterschrift über der Linie
             self.image(BytesIO(resp_sig.content), x=190, y=142, w=50)
         except: pass
         
         self.set_draw_color(0, 14, 43)
-        self.line(185, 172, 270, 172) 
-        self.set_xy(185, 173)
+        self.line(185, 172, 270, 172) # Die Linie
+        
+        self.set_xy(185, 173) # Text direkt unter die Linie
         self.set_font('Helvetica', 'B', 9)
         info = f"{aussteller['name']}\n{aussteller['amt']}\nFalkenfurt, den {datum}"
         self.multi_cell(85, 4, info, align='C')
-        
-        # 5. UNTERSCHRIFT (Leicht nach rechts verschoben für Balance)
-        try:
-            resp_sig = requests.get(aussteller['sig_url'], timeout=5)
-            self.image(BytesIO(resp_sig.content), x=190, y=145, w=55)
-        except: pass
-        
-        self.set_draw_color(0, 14, 43)
-        self.line(185, 175, 270, 175) 
-        self.set_xy(185, 177)
-        self.set_font('Helvetica', 'B', 10)
-        info = f"{aussteller['name']}\n{aussteller['amt']}\nFalkenfurt, den {datum}"
-        self.multi_cell(85, 5, info, align='C')
         
         return self.output(dest='S')
 
