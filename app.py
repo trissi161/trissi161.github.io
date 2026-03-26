@@ -45,21 +45,41 @@ class RDF_Urkunden_Master(FPDF):
         
         self.ln(10) # Großer Abstand zum Fließtext
         
-        # 4. FLIESSTEXT
-        self.set_font('Helvetica', '', 11.5)
+# Fließtext oben (Etwas kleiner, damit mehr Platz bleibt)
+        self.set_font('Helvetica', '', 10.5) 
         self.set_text_color(30, 30, 30)
         self.set_left_margin(35)
         self.set_right_margin(35)
-        self.multi_cell(0, 6, typ_daten['text_oben'], align='C')
+        self.multi_cell(0, 5, typ_daten['text_oben'], align='C') # 5 ist die Zeilenhöhe
         
-        self.ln(5)
-        self.set_font('Helvetica', 'B', 24)
+        self.ln(4)
+        
+        # Der Titel (NOTARZT)
+        self.set_font('Helvetica', 'B', 22)
         self.set_text_color(0, 14, 43)
         anzeige_titel = extra_pos if extra_pos else typ_daten['titel']
-        self.cell(0, 15, anzeige_titel.upper(), align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        self.cell(0, 12, anzeige_titel.upper(), align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         
-        self.ln(5)
-        self.multi_cell(0, 6, typ_daten['text_unten'], align='C')
+        self.ln(4)
+        
+        # Fließtext unten (WICHTIG: Schriftgröße auf 10.5 reduziert!)
+        self.set_font('Helvetica', '', 10.5)
+        self.set_text_color(30, 30, 30)
+        # Hier war der Fehler: 5 steht für einen sauberen Zeilenabstand
+        self.multi_cell(0, 5, typ_daten['text_unten'], align='C') 
+        
+        # Unterschriftenbereich (Fixiert am unteren Rand)
+        try:
+            resp_sig = requests.get(aussteller['sig_url'], timeout=5)
+            self.image(BytesIO(resp_sig.content), x=190, y=142, w=50)
+        except: pass
+        
+        self.set_draw_color(0, 14, 43)
+        self.line(185, 172, 270, 172) 
+        self.set_xy(185, 173)
+        self.set_font('Helvetica', 'B', 9)
+        info = f"{aussteller['name']}\n{aussteller['amt']}\nFalkenfurt, den {datum}"
+        self.multi_cell(85, 4, info, align='C')
         
         # 5. UNTERSCHRIFT (Leicht nach rechts verschoben für Balance)
         try:
