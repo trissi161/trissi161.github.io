@@ -66,19 +66,22 @@ class RDF_Urkunden_Master(FPDF):
         self.set_text_color(30, 30, 30)
         self.multi_cell(0, 5, typ_daten['text_unten'], align='C')
         
-        # 6. UNTERSCHRIFTENFELD
+# 6. UNTERSCHRIFTENFELD
         try:
             resp_sig = requests.get(aussteller['sig_url'], timeout=5)
-            self.image(BytesIO(resp_sig.content), x=190, y=142, w=50)
+            # x=200 (weiter rechts), y=148 (weiter unten), w=65 (größer skaliert)
+            self.image(BytesIO(resp_sig.content), x=200, y=148, w=65)
         except: pass
         
         self.set_draw_color(0, 14, 43)
-        self.line(185, 172, 270, 172) 
+        # Linie passend zur neuen Position (von x=195 bis 275)
+        self.line(195, 178, 275, 178) 
         
-        self.set_xy(185, 173) 
-        self.set_font('Helvetica', 'B', 9)
+        # Text unter der Linie
+        self.set_xy(195, 179) 
+        self.set_font('Helvetica', 'B', 10)
         info = f"{aussteller['name']}\n{aussteller['amt']}\nFalkenfurt, den {datum}"
-        self.multi_cell(85, 4, info, align='C')
+        self.multi_cell(80, 4.5, info, align='C')
         
         return self.output(dest='S')
 
