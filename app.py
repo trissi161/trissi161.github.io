@@ -10,76 +10,69 @@ from datetime import datetime
 # ==========================================
 
 class RDF_Urkunden_Master(FPDF):
-    """Klasse für Urkunden im Querformat."""
     def draw_border(self):
-        self.set_line_width(1.5); self.set_draw_color(0, 14, 43) 
+        self.set_line_width(1.5)
+        self.set_draw_color(0, 14, 43) 
         self.rect(10, 10, 277, 190) 
-        self.set_line_width(0.5); self.set_draw_color(255, 215, 0) 
+        self.set_line_width(0.5)
+        self.set_draw_color(255, 215, 0) 
         self.rect(13, 13, 271, 184) 
 
-def generate_pdf(self, name, geburtsdatum, datum, aussteller, typ_daten, extra_pos=None):
+    def generate_pdf(self, name, geburtsdatum, datum, aussteller, typ_daten, extra_pos=None):
         self.add_page(orientation='L')
         self.set_auto_page_break(auto=False)
         self.draw_border()
         
-        # Logo zentriert und etwas kleiner, damit es nicht dominiert
+        # 1. LOGO POSITION (Höher und zentriert)
         logo_url = "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/logo.png"
         try:
             resp = requests.get(logo_url, timeout=5)
-            # x=128 für exakte Mitte bei 297mm Breite (A4 Quer)
             self.image(BytesIO(resp.content), x=130, y=15, w=38) 
         except: pass
         
-        # Startposition für den Text deutlich tiefer setzen (y=65 statt 55)
-        self.set_y(65)
+        # 2. TEXT-START (Deutlich tiefer bei y=70, um Überlappung zu vermeiden)
+        self.set_y(70)
         self.set_font('Helvetica', 'B', 38)
         self.set_text_color(0, 14, 43)
-        self.cell(0, 20, 'URKUNDE', align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        self.cell(0, 15, 'URKUNDE', align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         
-        # Name
+        # 3. NAME & DATUM (Mehr Zeilenabstand durch ln)
         self.set_font('Helvetica', 'B', 28)
         self.cell(0, 15, name.upper(), align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         
-        # Geburtsdatum
         self.set_font('Helvetica', 'I', 13)
         self.cell(0, 8, f'geboren am {geburtsdatum}', align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         
-        self.ln(8) # Mehr Abstand zum Fließtext
+        self.ln(10) # Großer Abstand zum Fließtext
         
-        # Fließtext oben
+        # 4. FLIESSTEXT
         self.set_font('Helvetica', '', 11.5)
         self.set_text_color(30, 30, 30)
         self.set_left_margin(35)
         self.set_right_margin(35)
         self.multi_cell(0, 6, typ_daten['text_oben'], align='C')
         
-        self.ln(4)
-        
-        # Der Titel (z.B. NOTFALLSANITÄTER)
+        self.ln(5)
         self.set_font('Helvetica', 'B', 24)
         self.set_text_color(0, 14, 43)
         anzeige_titel = extra_pos if extra_pos else typ_daten['titel']
         self.cell(0, 15, anzeige_titel.upper(), align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         
-        self.ln(4)
-        
-        # Fließtext unten
-        self.set_font('Helvetica', '', 11.5)
-        self.set_text_color(30, 30, 30)
+        self.ln(5)
         self.multi_cell(0, 6, typ_daten['text_unten'], align='C')
         
-        # Unterschriftenbereich bleibt gleich, ist hier aber sicherheitshalber fixiert
+        # 5. UNTERSCHRIFT (Leicht nach rechts verschoben für Balance)
         try:
             resp_sig = requests.get(aussteller['sig_url'], timeout=5)
-            self.image(BytesIO(resp_sig.content), x=185, y=145, w=60)
+            self.image(BytesIO(resp_sig.content), x=190, y=145, w=55)
         except: pass
         
         self.set_draw_color(0, 14, 43)
-        self.line(180, 175, 270, 175) 
-        self.set_xy(180, 177)
+        self.line(185, 175, 270, 175) 
+        self.set_xy(185, 177)
         self.set_font('Helvetica', 'B', 10)
         info = f"{aussteller['name']}\n{aussteller['amt']}\nFalkenfurt, den {datum}"
-        self.multi_cell(90, 5, info, align='C')
+        self.multi_cell(85, 5, info, align='C')
         
         return self.output(dest='S')
 
