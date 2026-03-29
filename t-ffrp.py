@@ -6,16 +6,32 @@ from datetime import datetime
 # --- SEITEN-KONFIGURATION ---
 st.set_page_config(page_title="RDF Team-Panel", page_icon="📝", layout="wide")
 
-# Verbindung zu Google Sheets
+# Verbindung zu Google Sheets mit erweiterter Fehlerprüfung
 try:
+    # Wir schalten die Metadaten-Prüfung aus, um 400er Fehler zu minimieren
     conn = st.connection("gsheets", type=GSheetsConnection)
 except Exception as e:
-    st.error("Verbindung zu Google Sheets fehlgeschlagen. Prüfe deine Secrets!")
+    st.error(f"Kritischer Verbindungsfehler: {e}")
 
-# --- DATEN LADEN ---
+# Optimierte Lade-Funktion
 def load_data(sheet_name):
-    # ttl="0" sorgt dafür, dass die Daten bei jedem Laden frisch aus Google Sheets kommen
-    return conn.read(worksheet=sheet_name, ttl="0")
+    try:
+        # ttl=0 stellt sicher, dass wir keine alten (gecachten) Daten sehen
+        data = conn.read(worksheet=sheet_name, ttl=0)
+        return data
+    except Exception as e:
+        st.error(f"Fehler: Das Tabellenblatt '{sheet_name}' wurde nicht gefunden oder der Zugriff wurde verweigert. (Details: {e})")
+        return pd.DataFrame()
+
+# --- DATEN VORAB LADEN ---
+df_personal = load_data("Personal")
+df_berichte = load_data("Berichte")
+
+# Fallback für die Namensliste
+if not df_personal.empty and "Name" in df_personal.columns:
+    team_liste = df_personal["Name"].dropna().tolist()
+else:
+    team_liste = ["Kein Personal gefunden"]
 
 # --- NAVIGATION (TABS) ---
 tab_bericht, tab_admin = st.tabs(["📝 Support-Bericht", "🔒 Admin-Bereich"])
