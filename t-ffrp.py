@@ -33,7 +33,7 @@ with tab_bericht:
         with c1:
             name = st.selectbox("Dein Name", team_liste)
             spieler = st.text_input("Spieler")
-            beteiligte = st.text_area("Beteiligte")
+            beteiligte = st.text_area("Andere beteiligte Teammitglieder")
         with c2:
             problem = st.text_area("Problem")
             massnahmen = st.text_area("Maßnahmen")
