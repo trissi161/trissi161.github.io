@@ -45,7 +45,7 @@ with tab_bericht:
 
     # Mitarbeiterliste laden für das Auswahlmenü
     try:
-        df_personal = load_data("Personal")
+        df_personal = load_data("P")
         team_liste = df_personal["Name"].tolist()
     except:
         team_liste = ["Fehler: Personal-Liste nicht gefunden"]
