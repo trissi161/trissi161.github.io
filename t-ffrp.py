@@ -15,11 +15,12 @@ except Exception as e:
 # Optimierte Lade-Funktion mit Fehler-Diagnose
 def load_data(sheet_name):
     try:
-        # Wir nutzen hier nur den Namen, Streamlit holt die URL aus den Secrets
-        data = conn.read(worksheet=sheet_name, ttl=0)
+        url = st.secrets["connections"]["gsheets"]["spreadsheet"]
+        data = conn.read(spreadsheet=url, worksheet=sheet_name, ttl=0)
         return data
     except Exception as e:
-        st.error(f"Blatt '{sheet_name}' nicht lesbar. Details: {e}")
+        st.error(f"⚠️ Blatt '{sheet_name}' wurde im Google Sheet nicht gefunden.")
+        st.info("Checke bitte: Heißt der Tab unten im Google Sheet exakt so wie im Code?")
         return pd.DataFrame()
 
 # Daten vorab laden
