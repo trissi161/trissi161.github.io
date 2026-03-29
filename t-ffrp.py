@@ -24,8 +24,8 @@ def load_data(sheet_name):
         return pd.DataFrame()
 
 # Daten vorab laden
-df_personal = load_data("Personal")
-df_berichte = load_data("Berichte")
+df_personal = load_data("P")
+df_berichte = load_data("B")
 
 # Prüfen ob Daten da sind, sonst leere Liste für das Dropdown
 if not df_personal.empty and "Name" in df_personal.columns:
