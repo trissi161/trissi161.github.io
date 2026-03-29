@@ -362,6 +362,7 @@ with t2:
             d_ende = st.date_input("Kündigung zum", value=datetime.now()).strftime("%d.%m.%Y")
             titel = "KÜNDIGUNG DES ARBEITSVERHÄLTNISSES"
             text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\n"
+            v_datum = st.date_input("Vorfall am").strftime("%d.%m.%Y")
             f"hiermit kündigen wir das mit Ihnen bestehende Arbeitsverhältnis ordentlich unter Einhaltung der vertraglich vereinbarten Kündigungsfrist zum {v_datum}.\n\n"
             f"Hilfsweise kündigen wir zum nächstmöglichen Termin.\n\n"
             f"Wir weisen Sie ausdrücklich darauf hin, dass Sie gemäß § 38 Abs. 1 SGB III verpflichtet sind, sich spätestens drei Monate vor Beendigung des Arbeitsverhältnisses persönlich bei der Agentur für Arbeit arbeitssuchend zu melden. Die Einhaltung dieser Frist ist Voraussetzung für den Bezug von Arbeitslosengeld.\n\n"
@@ -374,6 +375,7 @@ with t2:
             d_ende = st.date_input("Ende zum", value=datetime.now()).strftime("%d.%m.%Y")
             titel = "KÜNDIGUNG DES BERUFSAUSBILDUNGSVERHÄLTNISSES"
             text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\n"
+            v_datum = st.date_input("Vorfall am").strftime("%d.%m.%Y")
             f"hiermit kündigen wir das mit Ihnen bestehende Ausbildungsverhältnis zum/zur {d['beruf']} "
             f"unter Einhaltung der maßgeblichen Fristen zum {v_datum}.\n\n"
             f"Sofern Sie sich noch in der Probezeit befinden, erfolgt diese Kündigung gemäß § 22 Abs. 1 BBiG ohne Einhaltung einer Kündigungsfrist und ohne Angabe von Gründen.\n\n"
