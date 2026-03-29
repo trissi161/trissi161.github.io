@@ -7,7 +7,7 @@ from datetime import datetime
 st.set_page_config(page_title="RDF Team-Panel", page_icon="📝", layout="wide")
 
 # DEINE TABELLEN-URL (Die ID aus deinem Link)
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1TZHjV7RTrE27p-hapfMe11eCUXhS9QFAd53OCQjpeOc/edit"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1TZHjV7RTrE27p-hapfMe11eCUXhS9QFAd53OCQjpeOc"
 
 # Verbindung herstellen
 try:
