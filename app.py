@@ -361,22 +361,34 @@ with t2:
         if hr_wahl == "Kündigung (Angestellt)":
             d_ende = st.date_input("Kündigung zum", value=datetime.now()).strftime("%d.%m.%Y")
             titel = "KÜNDIGUNG DES ARBEITSVERHÄLTNISSES"
-            text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit kündigen wir das mit Ihnen bestehende Arbeitsverhältnis ordentlich zum {d_ende}.\n\n"
-                    "Wir weisen Sie auf Ihre Meldepflicht bei der Agentur für Arbeit hin. Bitte geben Sie alle Ausrüstungsgegenstände bis zum letzten Arbeitstag ab.")
+            text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\n"
+            f"hiermit kündigen wir das mit Ihnen bestehende Arbeitsverhältnis ordentlich unter Einhaltung der vertraglich vereinbarten Kündigungsfrist zum {v_datum}.\n\n"
+            f"Hilfsweise kündigen wir zum nächstmöglichen Termin.\n\n"
+            f"Wir weisen Sie ausdrücklich darauf hin, dass Sie gemäß § 38 Abs. 1 SGB III verpflichtet sind, sich spätestens drei Monate vor Beendigung des Arbeitsverhältnisses persönlich bei der Agentur für Arbeit arbeitssuchend zu melden. Die Einhaltung dieser Frist ist Voraussetzung für den Bezug von Arbeitslosengeld.\n\n"
+            f"Bitte geben Sie sämtliche in Ihrem Besitz befindliche Ausrüstungsgegenstände, Schlüssel sowie Dienstausweise bis spätestens zu Ihrem letzten Arbeitstag bei der Dienststellenleitung ab.\n\n"
+            f"Über Ihren noch offenen Resturlaub sowie die Abgeltung etwaiger Überstunden werden wir Sie gesondert informieren. Ein qualifiziertes Arbeitszeugnis wird Ihnen zeitnah ausgestellt.\n\n"
+            f"Für Ihren weiteren Weg wünschen wir Ihnen alles Gute.")
         
         elif hr_wahl == "Kündigung (Azubi)":
             beruf = st.text_input("Ausbildungsberuf", value="Notfallsanitäter")
             d_ende = st.date_input("Ende zum", value=datetime.now()).strftime("%d.%m.%Y")
             titel = "KÜNDIGUNG DES BERUFSAUSBILDUNGSVERHÄLTNISSES"
-            text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit kündigen wir das Ausbildungsverhältnis zum/zur {beruf} zum {d_ende}.\n\n"
-                    "Sofern Sie sich in der Probezeit befinden, erfolgt dies gemäß § 22 BBiG ohne Frist.")
+            text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\n"
+            f"hiermit kündigen wir das mit Ihnen bestehende Ausbildungsverhältnis zum/zur {d['beruf']} "
+            f"unter Einhaltung der maßgeblichen Fristen zum {v_datum}.\n\n"
+            f"Sofern Sie sich noch in der Probezeit befinden, erfolgt diese Kündigung gemäß § 22 Abs. 1 BBiG ohne Einhaltung einer Kündigungsfrist und ohne Angabe von Gründen.\n\n"
+            f"Wir weisen Sie darauf hin, dass Sie sich innerhalb von drei Tagen nach Erhalt dieses Schreibens bei der Agentur für Arbeit arbeitssuchend melden müssen, um Nachteile beim Bezug von Leistungen zu vermeiden.\n\n"
+            f"Bitte geben Sie sämtliche Lehrmaterialien, Dienstkleidung, Schlüssel sowie Ihren Dienstausweis bis zum letzten Arbeitstag bei der Ausbildungsleitung ab. Ein Ausbildungszeugnis wird Ihnen nach Beendigung ausgehändigt.\n\n"
+            f"Wir wünschen Ihnen für Ihren weiteren Werdegang viel Erfolg.")
 
         elif hr_wahl == "Abmahnung":
             grund = st.text_area("Sachverhalt (Fehlverhalten)")
             v_datum = st.date_input("Vorfall am").strftime("%d.%m.%Y")
             titel = "ABMAHNUNG"
             text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit mahnen wir Sie wegen folgendem Vorfall am {v_datum} ab:\n\n{grund}\n\n"
-                    "Ein Wiederholungsfall kann zur Kündigung führen.")
+            f"Durch dieses Verhalten verletzen Sie Ihre arbeitsvertraglichen Pflichten in erheblichem Maße. Wir fordern Sie hiermit auf, Ihr Verhalten umgehend zu korrigieren und Ihren vertraglich vereinbarten Pflichten künftig ordnungsgemäß und pünktlich nachzukommen.\n\n"
+            f"Wir weisen Sie ausdrücklich darauf hin, dass wir im Falle einer Wiederholung oder bei weiteren Pflichtverletzungen das Arbeitsverhältnis kündigen werden. Eine Kopie dieser Abmahnung wird zu Ihrer Personalakte genommen.\n\n"
+            f"Wir hoffen auf eine künftig reibungslose Zusammenarbeit.")
 
         elif hr_wahl == "Suspendierung":
             grund_susp = st.text_area("Grund der Suspendierung")
