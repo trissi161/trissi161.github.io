@@ -1,3 +1,5 @@
 streamlit
 fpdf2
 requests
+st-gsheets-connection
+pandas
