@@ -6,34 +6,33 @@ from datetime import datetime
 # --- SEITEN-KONFIGURATION ---
 st.set_page_config(page_title="RDF Team-Panel", page_icon="📝", layout="wide")
 
-# Verbindung zu Google Sheets mit erweiterter Fehlerprüfung
+# Verbindung zu Google Sheets (Standard-Aufruf)
 try:
-    # Verbindung ohne Metadaten-Validierung (verhindert oft den 400er Fehler)
-    conn = st.connection("gsheets", type=GSheetsConnection, validate_metadata=False)
+    conn = st.connection("gsheets", type=GSheetsConnection)
 except Exception as e:
-    st.error(f"Kritischer Verbindungsfehler: {e}")
+    st.error(f"Verbindungsfehler: {e}")
 
-# Optimierte Lade-Funktion
+# Optimierte Lade-Funktion mit Fehler-Diagnose
 def load_data(sheet_name):
     try:
-        # ttl=0 stellt sicher, dass wir keine alten (gecachten) Daten sehen
+        # Wir nutzen hier nur den Namen, Streamlit holt die URL aus den Secrets
         data = conn.read(worksheet=sheet_name, ttl=0)
         return data
     except Exception as e:
-        st.error(f"Fehler: Das Tabellenblatt '{sheet_name}' wurde nicht gefunden oder der Zugriff wurde verweigert. (Details: {e})")
+        st.error(f"Blatt '{sheet_name}' nicht lesbar. Details: {e}")
         return pd.DataFrame()
 
-# --- DATEN VORAB LADEN ---
+# Daten vorab laden
 df_personal = load_data("Personal")
 df_berichte = load_data("Berichte")
 
-# Fallback für die Namensliste
+# Prüfen ob Daten da sind, sonst leere Liste für das Dropdown
 if not df_personal.empty and "Name" in df_personal.columns:
     team_liste = df_personal["Name"].dropna().tolist()
 else:
-    team_liste = ["Kein Personal gefunden"]
+    team_liste = ["Kein Personal in der Liste gefunden"]
 
-# --- NAVIGATION (TABS) ---
+# --- AB HIER STARTEN DEINE TABS ---
 tab_bericht, tab_admin = st.tabs(["📝 Support-Bericht", "🔒 Admin-Bereich"])
 
 # ==========================================
