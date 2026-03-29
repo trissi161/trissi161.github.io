@@ -1,70 +1,144 @@
-# --- TAB 2: HR ---
-with t2:
-    st.header("HR Dokumenten-Management")
-    hr_wahl = st.selectbox("Dokument wählen", ["Kündigung (Angestellt)", "Kündigung (Azubi)", "Abmahnung", "Suspendierung", "Arbeitsvertrag (Vollständig)"])
+import streamlit as st
+import requests
+from fpdf import FPDF
+from fpdf.enums import XPos, YPos
+from io import BytesIO
+from datetime import datetime
+from streamlit_gsheets import GSheetsConnection
+import pandas as pd
+
+# --- KONFIGURATION ---
+st.set_page_config(page_title="RDF Management Center", page_icon="🚑", layout="wide")
+
+# Verbindung zu Google Sheets (Nutzt die Daten aus deinen Secrets)
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+except Exception as e:
+    st.error("Fehler bei der Verbindung zu Google Sheets. Prüfe deine Secrets!")
+
+# --- PDF KLASSEN (Urkunden & HR) ---
+# [Hier bleiben deine Klassen RDF_Urkunden_Master, Falkenfurt_HR_Master etc. wie sie waren]
+# (Ich kürze das hier ab, damit der Code übersichtlich bleibt - behalte deine Klassen einfach bei!)
+
+class RDF_Urkunden_Master(FPDF):
+    def draw_border(self):
+        self.set_line_width(1.5)
+        self.set_draw_color(0, 14, 43) 
+        self.rect(10, 10, 277, 190) 
+        self.set_line_width(0.5)
+        self.set_draw_color(255, 215, 0) 
+        self.rect(13, 13, 271, 184) 
+
+    def generate_pdf(self, name, geburtsdatum, datum, aussteller, typ_daten, extra_pos=None):
+        self.add_page(orientation='L')
+        self.set_auto_page_break(auto=False)
+        self.draw_border()
+        logo_url = "https://r2.fivemanage.com/duNnRRRqkxrMPfikEWhQR/Bild_2026-03-24_235639621.png"
+        try:
+            resp = requests.get(logo_url, timeout=5)
+            self.image(BytesIO(resp.content), x=128, y=12, w=40) 
+        except: pass
+        self.set_y(75)
+        self.set_font('Helvetica', 'B', 38)
+        self.set_text_color(0, 14, 43)
+        self.cell(0, 15, 'URKUNDE' if typ_daten['titel'] != "SUSPENDIERUNG" else "DOKUMENT", align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        self.set_font('Helvetica', 'B', 26)
+        self.cell(0, 12, name.upper(), align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        self.set_font('Helvetica', 'I', 13)
+        self.cell(0, 8, f'geboren am {geburtsdatum}', align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        self.ln(2)
+        self.set_font('Helvetica', '', 11.5)
+        self.set_text_color(30, 30, 30)
+        self.set_left_margin(35)
+        self.set_right_margin(35)
+        self.multi_cell(0, 5.5, typ_daten['text_oben'], align='C')
+        self.ln(2)
+        self.set_font('Helvetica', 'B', 24)
+        self.set_text_color(0, 14, 43)
+        anzeige_titel = extra_pos if extra_pos else typ_daten['titel']
+        self.cell(0, 12, anzeige_titel.upper(), align='C', new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        self.ln(2)
+        self.set_font('Helvetica', '', 11)
+        self.multi_cell(0, 5.5, typ_daten['text_unten'], align='C')
+        try:
+            resp_sig = requests.get(aussteller['sig_url'], timeout=5)
+            self.image(BytesIO(resp_sig.content), x=185, y=145, w=65)
+        except: pass
+        self.set_draw_color(0, 14, 43)
+        self.line(185, 175, 270, 175) 
+        self.set_xy(185, 176) 
+        self.set_font('Helvetica', 'B', 10)
+        info = f"{aussteller['name']}\n{aussteller['amt']}\nFalkenfurt, den {datum}"
+        self.multi_cell(85, 4.5, info, align='C')
+        return self.output(dest='S')
+
+# [Füge hier deine anderen PDF Klassen wie Falkenfurt_HR_Master ein...]
+
+# --- HAUPT-TABS ---
+tab_panel, tab_urkunden, tab_hr = st.tabs(["👥 Team-Panel", "📜 Urkunden", "📂 HR-Dokumente"])
+
+# ==========================================
+# 1. TAB: TEAM-PANEL (Google Sheets)
+# ==========================================
+with tab_panel:
+    st.header("RDF Team-Dashboard")
     
-    hr_pdf_data = None
-    with st.form("hr_form_universal"):
-        empfaenger = st.text_input("Name des Empfängers")
-        bearbeiter = st.text_input("Unterschrift links (Dein Name)")
-        d_heute = st.date_input("Heutiges Datum", value=datetime.now()).strftime("%d.%m.%Y")
-        
-        # 1. Variablen vorbereiten (muss VOR der Text-Zuweisung passieren)
-        if hr_wahl == "Kündigung (Angestellt)":
-            v_datum = st.date_input("Kündigung zum (Datum)").strftime("%d.%m.%Y")
-            titel = "KÜNDIGUNG DES ARBEITSVERHÄLTNISSES"
-            text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\n"
-                    f"hiermit kündigen wir das mit Ihnen bestehende Arbeitsverhältnis ordentlich unter Einhaltung der vertraglich vereinbarten Kündigungsfrist zum {v_datum}.\n\n"
-                    f"Hilfsweise kündigen wir zum nächstmöglichen Termin.\n\n"
-                    f"Wir weisen Sie ausdrücklich darauf hin, dass Sie gemäß § 38 Abs. 1 SGB III verpflichtet sind, sich spätestens drei Monate vor Beendigung des Arbeitsverhältnisses persönlich bei der Agentur für Arbeit arbeitssuchend zu melden.\n\n"
-                    f"Bitte geben Sie sämtliche in Ihrem Besitz befindliche Ausrüstungsgegenstände, Schlüssel sowie Dienstausweise bis spätestens zu Ihrem letzten Arbeitstag bei der Dienststellenleitung ab.\n\n"
-                    f"Für Ihren weiteren Weg wünschen wir Ihnen alles Gute.")
-        
-        elif hr_wahl == "Kündigung (Azubi)":
-            beruf = st.text_input("Ausbildungsberuf", value="Notfallsanitäter")
-            v_datum = st.date_input("Ende zum (Datum)").strftime("%d.%m.%Y")
-            titel = "KÜNDIGUNG DES BERUFSAUSBILDUNGSVERHÄLTNISSES"
-            text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\n"
-                    f"hiermit kündigen wir das mit Ihnen bestehende Ausbildungsverhältnis zum/zur {beruf} "
-                    f"unter Einhaltung der maßgeblichen Fristen zum {v_datum}.\n\n"
-                    f"Sofern Sie sich noch in der Probezeit befinden, erfolgt diese Kündigung gemäß § 22 Abs. 1 BBiG ohne Einhaltung einer Kündigungsfrist.\n\n"
-                    f"Bitte geben Sie sämtliche Lehrmaterialien, Dienstkleidung und Schlüssel bis zum letzten Arbeitstag ab.\n\n"
-                    f"Wir wünschen Ihnen für Ihren weiteren Werdegang viel Erfolg.")
+    # Daten laden
+    try:
+        df_personal = conn.read(worksheet="Personal")
+        df_berichte = conn.read(worksheet="Berichte")
+    except:
+        st.warning("Konnte Daten nicht laden. Prüfe die Tabellenblatt-Namen (Personal/Berichte)!")
+        df_personal = pd.DataFrame(columns=["Name", "Rang", "Verwarnungen"])
+        df_berichte = pd.DataFrame(columns=["Zeitpunkt", "Supporter", "FallID", "Bericht", "Status"])
 
-        elif hr_wahl == "Abmahnung":
-            v_datum = st.date_input("Vorfall am").strftime("%d.%m.%Y")
-            grund = st.text_area("Sachverhalt (Fehlverhalten)")
-            titel = "ABMAHNUNG"
-            text = (f"Sehr geehrte/r Frau/Herr {empfaenger},\n\nhiermit mahnen wir Sie wegen folgendem Vorfall am {v_datum} ab:\n\n{grund}\n\n"
-                    f"Durch dieses Verhalten verletzen Sie Ihre arbeitsvertraglichen Pflichten erheblich. Wir fordern Sie auf, Ihr Verhalten umgehend zu korrigieren.\n\n"
-                    f"Im Falle einer Wiederholung werden wir das Arbeitsverhältnis kündigen. Eine Kopie dieser Abmahnung wird zu Ihrer Personalakte genommen.")
+    sub_nav = st.radio("Aktion wählen:", ["Support-Bericht schreiben", "Admin-Bereich"], horizontal=True)
 
-        elif hr_wahl == "Suspendierung":
-            grund_susp = st.text_area("Grund der Suspendierung")
-            ende_susp = st.text_input("Suspendiert bis zum", value="auf Weiteres")
-            # Text wird hier in der Klasse Falkenfurt_Suspendierung generiert
+    if sub_nav == "Support-Bericht schreiben":
+        with st.form("support_form"):
+            supporter_name = st.selectbox("Dein Name", df_personal["Name"].tolist() if not df_personal.empty else ["Keine Daten"])
+            fall_id = st.text_input("Fall-ID")
+            bericht_text = st.text_area("Was ist vorgefallen?")
+            status_fall = st.selectbox("Status", ["Geklärt", "Offen", "Eskaliert"])
+            
+            if st.form_submit_button("Bericht absenden"):
+                neuer_eintrag = pd.DataFrame([{
+                    "Zeitpunkt": datetime.now().strftime("%d.%m.%Y %H:%M"),
+                    "Supporter": supporter_name,
+                    "FallID": fall_id,
+                    "Bericht": bericht_text,
+                    "Status": status_fall
+                }])
+                df_neu = pd.concat([df_berichte, neuer_eintrag], ignore_index=True)
+                conn.update(worksheet="Berichte", data=df_neu)
+                st.success("Bericht gespeichert!")
 
-        elif hr_wahl == "Arbeitsvertrag (Vollständig)":
-            funktion = st.text_input("Position/Funktion", value="Notfallsanitäter")
-            # Text wird hier in der Klasse Falkenfurt_Full_Contract generiert
+    elif sub_nav == "Admin-Bereich":
+        pw = st.text_input("Admin-Passwort", type="password")
+        if pw == "2504":
+            st.subheader("Mitarbeiterliste & Verwarnungen")
+            # Hier kann die Leitung editieren
+            edited_personal = st.data_editor(df_personal, num_rows="dynamic")
+            if st.button("Personal-Änderungen speichern"):
+                conn.update(worksheet="Personal", data=edited_personal)
+                st.success("Personal-Daten aktualisiert!")
+            
+            st.divider()
+            st.subheader("Alle Support-Berichte")
+            st.dataframe(df_berichte, use_container_width=True)
+        elif pw != "":
+            st.error("Falsches Passwort!")
 
-        # 2. Submit Button (Wichtig: Muss im Form-Block bleiben!)
-        submit_hr = st.form_submit_button("Dokument generieren")
+# ==========================================
+# 2. TAB: URKUNDEN (Dein alter Code)
+# ==========================================
+with tab_urkunden:
+    # [Hier fügst du deinen bisherigen Urkunden-Code ein]
+    st.write("Hier kommen deine Urkunden-Optionen rein...")
 
-        if submit_hr:
-            if empfaenger and bearbeiter:
-                if hr_wahl == "Suspendierung":
-                    pdf = Falkenfurt_Suspendierung()
-                    hr_pdf_data = pdf.generate({'name_empfaenger': empfaenger, 'bearbeiter_name': bearbeiter, 'datum_heute': d_heute, 'ende_suspendierung': ende_susp, 'grund': grund_susp})
-                elif hr_wahl == "Arbeitsvertrag (Vollständig)":
-                    pdf = Falkenfurt_Full_Contract()
-                    hr_pdf_data = pdf.generate({'name': empfaenger, 'funktion': funktion, 'datum': d_heute})
-                else:
-                    pdf = Falkenfurt_HR_Master()
-                    hr_pdf_data = pdf.generate_doc(titel, text, {'datum_heute': d_heute, 'bearbeiter_name': bearbeiter})
-            else:
-                st.warning("Bitte Namen des Empfängers und Bearbeiters ausfüllen.")
-
-    if hr_pdf_data:
-        st.success(f"✅ {hr_wahl} bereit!")
-        st.download_button("⬇️ Dokument herunterladen", data=bytes(hr_pdf_data), file_name=f"{hr_wahl.replace(' ','_')}.pdf")
+# ==========================================
+# 3. TAB: HR (Dein alter Code)
+# ==========================================
+with tab_hr:
+    # [Hier fügst du deinen bisherigen HR-Code ein]
+    st.write("Hier kommen deine HR-Optionen rein...")
