@@ -8,8 +8,8 @@ st.set_page_config(page_title="RDF Team-Panel", page_icon="📝", layout="wide")
 
 # Verbindung zu Google Sheets mit erweiterter Fehlerprüfung
 try:
-    # Wir schalten die Metadaten-Prüfung aus, um 400er Fehler zu minimieren
-    conn = st.connection("gsheets", type=GSheetsConnection)
+    # Verbindung ohne Metadaten-Validierung (verhindert oft den 400er Fehler)
+    conn = st.connection("gsheets", type=GSheetsConnection, validate_metadata=False)
 except Exception as e:
     st.error(f"Kritischer Verbindungsfehler: {e}")
 
