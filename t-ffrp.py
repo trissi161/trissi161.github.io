@@ -8,7 +8,7 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
 # --- KONFIGURATION ---
-st.set_page_config(page_title="RDF Management Center", page_icon="🚑", layout="wide")
+st.set_page_config(page_title="Team Management Falkenfurt", page_icon="👾", layout="wide")
 
 # Verbindung zu Google Sheets (Nutzt die Daten aus deinen Secrets)
 try:
