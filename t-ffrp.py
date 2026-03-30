@@ -24,6 +24,7 @@ URL_P = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&
 URL_B = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=B"
 URL_V = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=V"
 URL_A = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=A"
+URL_D = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=D"
 
 # RÄNGE UND FARBEN
 RANG_CONFIG = {
@@ -227,4 +228,68 @@ with tab_admin:
                 requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "P", "action": "update_all", "headers": df_personal.columns.tolist(), "rows": edited_p.values.tolist()}))
                 st.success("Gespeichert!")
                 st.rerun()
+
+        with admin_sub5: 
+            st.subheader("Team-Derank protokollieren")
+            
+            with st.form("derank_form", clear_on_submit=True):
+                d_target = st.selectbox("Mitglied auswählen", team_liste)
+                
+                # Aktuellen Rang finden
+                aktueller_rang = df_personal[df_personal['Name'] == d_target]['Rang'].values[0] if not df_personal.empty else "Unbekannt"
+                st.info(f"Aktueller Rang von {d_target}: **{aktueller_rang}**")
+                
+                # Mögliche neue Ränge (alle außer der aktuelle)
+                moegliche_raenge = [r for r in RANG_CONFIG.keys() if r != aktueller_rang]
+                d_new_rank = st.selectbox("Neuer Rang", moegliche_raenge)
+                
+                d_grund = st.text_area("Grund für den Derank / die Änderung")
+                d_issuer = st.selectbox("Ausgeführt von (Admin)", team_liste, key="derank_admin")
+                
+                if st.form_submit_button("Derank durchführen & protokollieren"):
+                    if d_grund:
+                        # 1. Protokoll-Eintrag für Blatt 'D'
+                        derank_log = [
+                            datetime.now().strftime("%d.%m.%Y %H:%M"),
+                            d_target,
+                            aktueller_rang,
+                            d_new_rank,
+                            d_grund,
+                            d_issuer
+                        ]
+                        
+                        # 2. Personal-Datenblatt 'P' aktualisieren
+                        df_p_updated = df_personal.copy()
+                        df_p_updated.loc[df_p_updated['Name'] == d_target, 'Rang'] = d_new_rank
+                        
+                        try:
+                            # Sende Protokoll an Blatt D
+                            requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "D", "row": derank_log}))
+                            
+                            # Update das Personalblatt P
+                            payload_p = {
+                                "sheet": "P", 
+                                "action": "update_all", 
+                                "headers": df_p_updated.columns.tolist(), 
+                                "rows": df_p_updated.fillna("").values.tolist()
+                            }
+                            requests.post(WEBHOOK_URL, data=json.dumps(payload_p))
+                            
+                            st.success(f"✅ {d_target} wurde auf {d_new_rank} abgestuft. Protokoll gespeichert!")
+                            time.sleep(1)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Fehler beim Speichern: {e}")
+                    else:
+                        st.warning("Bitte gib einen Grund an.")
+
+            st.divider()
+            st.subheader("📜 Derank-Historie")
+            df_deranks = load_data(URL_D)
+            if not df_deranks.empty:
+                st.dataframe(df_deranks.iloc[::-1], use_container_width=True, hide_index=True)
+            else:
+                st.write("Noch keine Deranks protokolliert.")
     elif pw != "": st.error("Falsches Passwort")
+
+
