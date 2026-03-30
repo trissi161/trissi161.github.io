@@ -179,44 +179,48 @@ with tab_admin:
 
         with admin_sub2:
             st.subheader("Offene Abmeldungsanträge")
-            # Daten frisch laden
-            df_a_current = load_data(URL_A)
             
-            if df_a_current.empty:
-                st.info("Keine Daten in Blatt A gefunden.")
+            # WICHTIG: Daten hier ohne Cache laden
+            # Wir hängen einen Zeitstempel an, damit Google uns nicht die alte CSV schickt
+            df_a_current = pd.read_csv(f"{URL_A}&cachebust={datetime.now().timestamp()}")
+            
+            # Status-Spalte säubern für den Filter
+            df_a_current['Status'] = df_a_current['Status'].astype(str).str.strip()
+            offene = df_a_current[df_a_current['Status'] == 'Offen']
+            
+            if offene.empty:
+                st.info("Keine neuen Abmeldungen zum Bearbeiten.")
             else:
-                # Wir filtern die Zeilen, wo der Status 'Offen' ist
-                # .strip() entfernt unsichtbare Leerzeichen, die das Akzeptieren verhindern könnten
-                offene = df_a_current[df_a_current['Status'].astype(str).str.strip() == 'Offen']
-                
-                if offene.empty:
-                    st.info("Keine neuen Abmeldungen zum Bearbeiten.")
-                else:
-                    for idx, row in offene.iterrows():
-                        with st.expander(f"📌 Antrag von {row['Name']} ({row['Von']} bis {row['Bis']})"):
-                            st.write(f"**Grund:** {row['Grund']}")
-                            st.write(f"**Zusatz:** {row.get('Zusatz', 'Kein Zusatz')}")
+                for idx, row in offene.iterrows():
+                    with st.expander(f"📌 Antrag von {row['Name']} ({row['Von']} bis {row['Bis']})"):
+                        st.write(f"**Grund:** {row['Grund']}")
+                        
+                        if st.button(f"Haken setzen für {row['Name']}", key=f"acc_{idx}"):
+                            # 1. Status im lokalen DataFrame ändern
+                            df_a_current.at[idx, 'Status'] = 'Akzeptiert'
                             
-                            # Der Button nutzt den Index 'idx' aus dem originalen df_a_current
-                            if st.button(f"Haken setzen für {row['Name']}", key=f"acc_{idx}"):
-                                # Wir setzen den Status exakt auf 'Akzeptiert'
-                                df_a_current.at[idx, 'Status'] = 'Akzeptiert'
-                                
-                                # Das gesamte Sheet aktualisieren
-                                payload = {
-                                    "sheet": "A", 
-                                    "action": "update_all", 
-                                    "headers": df_a_current.columns.tolist(), 
-                                    "rows": df_a_current.values.tolist()
-                                }
-                                
+                            # 2. Payload vorbereiten
+                            # Wir stellen sicher, dass keine NaN Werte (leere Zellen) das JSON kaputt machen
+                            df_to_send = df_a_current.fillna("")
+                            
+                            payload = {
+                                "sheet": "A", 
+                                "action": "update_all", 
+                                "headers": df_to_send.columns.tolist(), 
+                                "rows": df_to_send.values.tolist()
+                            }
+                            
+                            with st.spinner('Speichere in Google Sheets...'):
                                 try:
                                     res = requests.post(WEBHOOK_URL, data=json.dumps(payload))
                                     if res.status_code == 200:
-                                        st.success(f"✅ Abmeldung für {row['Name']} wurde gespeichert!")
+                                        st.success(f"✅ Status für {row['Name']} geändert!")
+                                        # Kurze Pause, damit Google Zeit zum Speichern hat
+                                        import time
+                                        time.sleep(1) 
                                         st.rerun()
                                     else:
-                                        st.error("Fehler beim Senden an Google Sheets.")
+                                        st.error(f"Fehler: Google Script hat mit {res.status_code} geantwortet.")
                                 except Exception as e:
                                     st.error(f"Verbindung zum Webhook fehlgeschlagen: {e}")
 
