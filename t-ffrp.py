@@ -229,7 +229,7 @@ with tab_admin:
                 st.success("Gespeichert!")
                 st.rerun()
 
-with admin_sub5: 
+        with admin_sub5: 
             st.subheader("Team-Rang Änderung protokollieren")
 
             # 1. Auswahl des Mitglieds (AUSSERHALB des Formulars für Live-Update)
