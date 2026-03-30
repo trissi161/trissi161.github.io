@@ -8,31 +8,44 @@ from datetime import datetime
 st.set_page_config(page_title="FF Team-Panel", page_icon="👾", layout="wide")
 
 SHEET_ID = "1TZHjV7RTrE27p-hapfMe11eCUXhS9QFAd53OCQjpeOc"
-WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyy4XXxcY4-L7iU0X687hxXEluTwzFNv2XWU14cdHr3FEIlkkw-45eawPYA6cy0ICUN/exec" # Deine URL einfügen!
+# Stelle sicher, dass dies deine aktuelle Web-App-URL ist!
+WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyy4XXxcY4-L7iU0X687hxXEluTwzFNv2XWU14cdHr3FEIlkkw-45eawPYA6cy0ICUN/exec"
 
 URL_P = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=P"
 URL_B = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=B"
 
+# RANG-SORTIERUNG DEFINIEREN
+RANG_ORDNUNG = {
+    "Projektleitung": 1,
+    "Stellv. Projektleitung": 2,
+    "Management": 3,
+    "Teamleitung": 4,
+    "Stellv. Teamleitung": 5,
+    "Administrative Leitung": 6,
+    "Administrator": 7,
+    "Moderator": 8,
+    "Supporter": 9,
+    "Test-Supporter": 10
+}
+
 def load_data(url):
     try:
-        return pd.read_csv(f"{url}&cachebust={datetime.now().timestamp()}")
+        df = pd.read_csv(f"{url}&cachebust={datetime.now().timestamp()}")
+        # Sortierung anwenden, falls es die Personal-Liste ist
+        if "Rang" in df.columns:
+            df['Sort'] = df['Rang'].map(RANG_ORDNUNG).fillna(99)
+            df = df.sort_values('Sort').drop(columns=['Sort'])
+        return df
     except:
         return pd.DataFrame()
 
 # --- DATEN LADEN ---
 df_personal = load_data(URL_P)
-
-# Sicherstellen, dass die Liste aktuell ist
-if not df_personal.empty and "Name" in df_personal.columns:
-    team_liste = df_personal["Name"].dropna().tolist()
-else:
-    team_liste = ["Lade Fehler..."]
+team_liste = df_personal["Name"].dropna().tolist() if not df_personal.empty else ["Lade Fehler..."]
 
 tab_bericht, tab_admin = st.tabs(["📝 Support-Bericht", "🔒 Admin-Bereich"])
 
-# ==========================================
-# 1. TAB: SUPPORT-BERICHT
-# ==========================================
+# --- SUPPORT BERICHT (Bleibt gleich) ---
 with tab_bericht:
     st.header("Support-Bericht einreichen")
     with st.form("support_form", clear_on_submit=True):
@@ -53,9 +66,7 @@ with tab_bericht:
             requests.post(WEBHOOK_URL, data=json.dumps(payload))
             st.success("✅ Bericht gespeichert!")
 
-# ==========================================
-# 2. TAB: ADMIN-BEREICH (Personal-Management)
-# ==========================================
+# --- ADMIN BEREICH (NEU MIT EDIT-FUNKTION) ---
 with tab_admin:
     st.header("Admin-Verwaltung")
     pw = st.text_input("Passwort", type="password")
@@ -65,37 +76,37 @@ with tab_admin:
         
         if admin_wahl == "Support-Berichte":
             st.subheader("Eingegangene Berichte")
-            st.dataframe(load_data(URL_B).iloc[::-1], use_container_width=True)
+            df_b = load_data(URL_B)
+            # Hier nutzen wir den Editor, damit man Berichte korrigieren oder löschen kann
+            edited_b = st.data_editor(df_b, use_container_width=True, num_rows="dynamic")
             
-        elif admin_wahl == "Personal-Verwaltung":
-            st.subheader("Neues Teammitglied hinzufügen")
-            
-            # Formular für neues Personal
-            with st.expander("➕ Neues Mitglied registrieren", expanded=False):
-                with st.form("new_member_form", clear_on_submit=True):
-                    new_name = st.text_input("Vollständiger Name")
-                    new_rank = st.selectbox("Rang", ["Projektleitung", "Stellv. Projektleitung", "Management", "Teamleitung", "Stellv. Teamleitung", "Administrative Leitung", "Administrator", "Moderator", "Supporter", "Test-Supporter"])
-                    # Beitrittsdatum standardmäßig auf HEUTE gesetzt
-                    new_date = st.date_input("Beitrittsdatum", datetime.now())
-                    
-                    if st.form_submit_button("Mitglied speichern"):
-                        if new_name:
-                            # Daten für Blatt "P" vorbereiten
-                            # Reihenfolge: Name, Rang, Verwarnungen (0), Beitrittsdatum
-                            p_row = [new_name, new_rank, 0, new_date.strftime("%d.%m.%Y")]
-                            payload_p = {"sheet": "P", "row": p_row}
-                            
-                            res = requests.post(WEBHOOK_URL, data=json.dumps(payload_p))
-                            if res.status_code == 200:
-                                st.success(f"✅ {new_name} wurde als {new_rank} hinzugefügt!")
-                                st.rerun() # Seite neu laden, um Dropdowns zu aktualisieren
-                        else:
-                            st.warning("Bitte einen Namen eingeben.")
+            if st.button("Berichte-Änderungen speichern"):
+                payload = {
+                    "sheet": "B",
+                    "action": "update_all",
+                    "headers": df_b.columns.tolist(),
+                    "rows": edited_b.values.tolist()
+                }
+                requests.post(WEBHOOK_URL, data=json.dumps(payload))
+                st.success("✅ Berichte aktualisiert!")
 
-            st.divider()
-            st.subheader("Aktuelle Team-Liste")
-            st.dataframe(df_personal, use_container_width=True)
-            st.info("💡 Verwarnungen oder Namensänderungen bitte aktuell noch direkt im Google Sheet anpassen.")
+        elif admin_wahl == "Personal-Verwaltung":
+            st.subheader("Personal verwalten")
+            st.info("💡 Du kannst Namen, Ränge oder Verwarnungen direkt in der Tabelle ändern und neue Zeilen unten hinzufügen.")
             
+            # Der Editor erlaubt direktes Bearbeiten
+            edited_p = st.data_editor(df_personal, use_container_width=True, num_rows="dynamic")
+            
+            if st.button("Personal-Liste speichern"):
+                payload = {
+                    "sheet": "P",
+                    "action": "update_all",
+                    "headers": df_personal.columns.tolist(),
+                    "rows": edited_p.values.tolist()
+                }
+                res = requests.post(WEBHOOK_URL, data=json.dumps(payload))
+                if res.status_code == 200:
+                    st.success("✅ Personal-Datenbank erfolgreich aktualisiert!")
+                    st.rerun()
     elif pw != "":
         st.error("Falsches Passwort")
