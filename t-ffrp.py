@@ -17,7 +17,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 SHEET_ID = "1TZHjV7RTrE27p-hapfMe11eCUXhS9QFAd53OCQjpeOc"
-WEBHOOK_URL = "DEINE_AKTUELLE_WEBHOOK_URL_HIER" # Prüfe, ob die URL noch aktuell ist!
+WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyB4GeBPncUOdZpAARrzf-EuJa0nqJ5Su5_0MzKg9a30hVhQ7eifQwVqVbRlMtF6y4M/exec" # Prüfe, ob die URL noch aktuell ist!
 
 URL_P = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=P"
 URL_B = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=B"
