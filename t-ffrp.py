@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 import json
 from datetime import datetime, timedelta
+import time  # WICHTIG: Dieser Import hat gefehlt!
 
 # --- KONFIGURATION ---
 st.set_page_config(page_title="FF Team-Panel", page_icon="👾", layout="wide")
@@ -49,31 +50,22 @@ def load_data(url):
 def get_status_info(name, df_a):
     """Ermittelt nur das Emoji für den Status."""
     if df_a.empty: return "🟢"
-    
     now = datetime.now().date()
     suche_name = str(name).strip().lower()
     aktive_a = df_a[(df_a['Status'].astype(str).str.strip() == 'Akzeptiert')].copy()
-    
     for _, row in aktive_a.iterrows():
         if str(row['Name']).strip().lower() == suche_name:
             try:
                 start = pd.to_datetime(row['Von']).date()
                 ende = pd.to_datetime(row['Bis']).date()
-                if start <= now <= ende:
-                    return "🔴"
-                elif now < start <= (now + timedelta(days=2)):
-                    return "🟡"
-            except:
-                continue
+                if start <= now <= ende: return "🔴"
+                elif now < start <= (now + timedelta(days=2)): return "🟡"
+            except: continue
     return "🟢"
 
 def style_team_table(df, df_a):
     if df.empty: return df
-    
-    # Status-Emojis generieren
     status_emojis = [get_status_info(n, df_a) for n in df['Name']]
-    
-    # Kopie erstellen um SettingWithCopyWarning zu vermeiden
     df_styled = df.copy()
     if "Status" not in df_styled.columns:
         df_styled.insert(0, "Status", status_emojis)
@@ -82,25 +74,20 @@ def style_team_table(df, df_a):
         rank = row['Rang']
         rank_color = RANG_CONFIG.get(rank, {}).get('color', '#ffffff')
         st_emoji = get_status_info(row['Name'], df_a)
-        
         styles = []
         for col in row.index:
-            if col == "Status":
-                styles.append('text-align: center; font-size: 1.2rem;')
+            if col == "Status": styles.append('text-align: center; font-size: 1.2rem;')
             elif col in ['Name', 'Rang']:
                 opacity = "0.4" if st_emoji == "🔴" else "1.0"
                 styles.append(f'color: {rank_color}; font-weight: bold; opacity: {opacity};')
-            elif col == 'Verwarnungen':
+            elif col == 'Verwarnungen' and 'Verwarnungen' in row:
                 try:
                     v = int(row['Verwarnungen'])
                     v_c = '#2ecc71' if v == 0 else '#f1c40f' if v == 1 else '#e67e22' if v == 2 else '#e74c3c'
                     styles.append(f'color: {v_c}; font-weight: bold;')
-                except:
-                    styles.append('color: #d1d1d1;')
-            else:
-                styles.append('color: #d1d1d1;')
+                except: styles.append('color: #d1d1d1;')
+            else: styles.append('color: #d1d1d1;')
         return styles
-
     return df_styled.style.apply(apply_row_styles, axis=1)
 
 # --- DATEN LADEN ---
@@ -111,7 +98,7 @@ team_liste = df_personal["Name"].dropna().tolist() if not df_personal.empty else
 tab_bericht, tab_admin = st.tabs(["📝 Team-Bereich", "🔒 High-Team-Bereich"])
 
 # ==========================================
-# 1. TAB: SUPPORT-BERICHT & ABMELDUNG
+# 1. TAB: TEAM-BEREICH
 # ==========================================
 with tab_bericht:
     sub_tab1, sub_tab2 = st.tabs(["Support Berichte", "Abmeldungen"])
@@ -147,7 +134,7 @@ with tab_bericht:
             if st.form_submit_button("Abmeldung absenden"):
                 loa_row = [datetime.now().strftime("%d.%m.%Y %H:%M"), a_name, a_grund, str(a_von), str(a_bis), a_zusatz, "Offen"]
                 requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "A", "row": loa_row}))
-                st.success("✅ Abmeldung eingereicht! Ein High-Team Mitglied muss diese noch bestätigen.")
+                st.success("✅ Abmeldung eingereicht!")
 
         st.divider()
         st.subheader("📊 Aktuelle Team-Verfügbarkeit")
@@ -155,11 +142,8 @@ with tab_bericht:
             df_status_view = df_personal.copy()
             df_status_view['Sort'] = df_status_view['Rang'].map(lambda x: RANG_CONFIG.get(x, {}).get('order', 99))
             df_status_view = df_status_view.sort_values('Sort')[['Name', 'Rang']]
-            
             st.dataframe(style_team_table(df_status_view, df_abmeldungen), use_container_width=True, height=400, hide_index=True)
-            st.info("💡 **Legende:** 🟢 Anwesend | 🟡 Abmeldung in Kürze | 🔴 Abwesend")
-        else:
-            st.info("Lade Team-Daten...")
+            st.info("💡 **Legende:** 🟢 Anwesend | 🟡 Bald weg | 🔴 Abwesend")
 
 # ==========================================
 # 2. TAB: ADMIN-BEREICH
@@ -179,114 +163,68 @@ with tab_admin:
                 df_p_sort = df_p_sort.sort_values('Sort').drop(columns=['Sort'])
                 st.dataframe(style_team_table(df_p_sort, df_abmeldungen), use_container_width=True, height=450)
                 st.caption("🟢 Anwesend | 🟡 Bald weg | 🔴 Abwesend")
-            
             st.divider()
             st.subheader("Letzte Support-Berichte")
             st.dataframe(load_data(URL_B).iloc[::-1], use_container_width=True)
 
         with admin_sub2:
             st.subheader("Offene Abmeldungsanträge")
-            # Daten frisch laden
             df_a_current = pd.read_csv(f"{URL_A}&cachebust={datetime.now().timestamp()}")
             df_a_current['Status'] = df_a_current['Status'].astype(str).str.strip()
             
-            # 1. SEKTION: NEUE ANTRÄGE BESTÄTIGEN
+            # Neue Anträge
             offene = df_a_current[df_a_current['Status'] == 'Offen']
-            
             if offene.empty:
-                st.info("Keine neuen Abmeldungen zum Bearbeiten.")
+                st.info("Keine neuen Abmeldungen.")
             else:
                 for idx, row in offene.iterrows():
-                    with st.expander(f"📌 NEU: Antrag von {row['Name']} ({row['Von']} bis {row['Bis']})"):
-                        st.write(f"**Grund:** {row['Grund']}")
-                        if st.button(f"Haken setzen für {row['Name']}", key=f"acc_{idx}"):
+                    with st.expander(f"📌 Antrag von {row['Name']} ({row['Von']} - {row['Bis']})"):
+                        st.write(f"Grund: {row['Grund']}")
+                        if st.button(f"Akzeptieren: {row['Name']}", key=f"acc_{idx}"):
                             df_a_current.at[idx, 'Status'] = 'Akzeptiert'
-                            payload = {
-                                "sheet": "A", "action": "update_all", 
-                                "headers": df_a_current.columns.tolist(), 
-                                "rows": df_a_current.fillna("").values.tolist()
-                            }
+                            payload = {"sheet": "A", "action": "update_all", "headers": df_a_current.columns.tolist(), "rows": df_a_current.fillna("").values.tolist()}
                             requests.post(WEBHOOK_URL, data=json.dumps(payload))
-                            st.success(f"✅ {row['Name']} akzeptiert!")
+                            st.success("Akzeptiert!")
                             time.sleep(1)
                             st.rerun()
 
             st.divider()
-            
-            # 2. SEKTION: AKTIVE ABMELDUNGEN VERWALTEN / ABBRECHEN
-            st.subheader("Aktive & Zukünftige Abmeldungen")
+            st.subheader("Aktive Abmeldungen verwalten")
             akzeptiert = df_a_current[df_a_current['Status'] == 'Akzeptiert'].copy()
-            
-            if akzeptiert.empty:
-                st.write("Aktuell keine aktiven Abmeldungen.")
-            else:
-                # Wir fügen eine temporäre Spalte für die Auswahl hinzu
-                akzeptiert.insert(0, "Auswählen", False)
+            if not akzeptiert.empty:
+                akzeptiert.insert(0, "Löschen", False)
+                edited_a = st.data_editor(akzeptiert, column_config={"Löschen": st.column_config.CheckboxColumn(default=False)}, disabled=["Zeitpunkt", "Name", "Von", "Bis", "Status"], use_container_width=True, hide_index=True)
                 
-                edited_a = st.data_editor(
-                    akzeptiert,
-                    column_config={"Auswählen": st.column_config.CheckboxColumn("Abbrechen?", default=False)},
-                    disabled=["Zeitpunkt", "Name", "Grund", "Von", "Bis", "Zusatz", "Status"],
-                    hide_index=True,
-                    use_container_width=True,
-                    key="cancel_editor"
-                )
-
-                # Prüfen, welche Zeilen ausgewählt wurden
-                to_delete = edited_a[edited_a["Auswählen"] == True]
-                
-                if not to_delete.empty:
-                    if st.button(f"❌ {len(to_delete)} Abmeldung(en) abbrechen"):
-                        # Wir behalten im originalen DF nur die Zeilen, die NICHT ausgewählt wurden
-                        # (Wir identifizieren sie über den Namen und den Zeitpunkt)
-                        for _, del_row in to_delete.iterrows():
-                            df_a_current = df_a_current[~(
-                                (df_a_current['Name'] == del_row['Name']) & 
-                                (df_a_current['Zeitpunkt'] == del_row['Zeitpunkt'])
-                            )]
-                        
-                        payload = {
-                            "sheet": "A", "action": "update_all", 
-                            "headers": df_a_current.columns.tolist(), 
-                            "rows": df_a_current.fillna("").values.tolist()
-                        }
-                        
-                        with st.spinner('Lösche aus Datenbank...'):
-                            res = requests.post(WEBHOOK_URL, data=json.dumps(payload))
-                            if res.status_code == 200:
-                                st.success("Abmeldungen erfolgreich entfernt!")
-                                time.sleep(1)
-                                st.rerun()
+                if st.button("Ausgewählte Abmeldungen abbrechen"):
+                    to_delete = edited_a[edited_a["Löschen"] == True]
+                    for _, d_row in to_delete.iterrows():
+                        df_a_current = df_a_current[~((df_a_current['Name'] == d_row['Name']) & (df_a_current['Zeitpunkt'] == d_row['Zeitpunkt']))]
+                    payload = {"sheet": "A", "action": "update_all", "headers": df_a_current.columns.tolist(), "rows": df_a_current.fillna("").values.tolist()}
+                    requests.post(WEBHOOK_URL, data=json.dumps(payload))
+                    st.success("Aktualisiert!")
+                    time.sleep(1)
+                    st.rerun()
 
         with admin_sub3:
             st.subheader("Verwarnung ausstellen")
             with st.form("verwarnung_form", clear_on_submit=True):
-                v_target = st.selectbox("Teammitglied wählen", team_liste)
-                v_grund = st.text_area("Begründung der Verwarnung")
-                v_issuer = st.selectbox("Ausgestellt von", team_liste)
-                if st.form_submit_button("Verwarnung rechtskräftig machen"):
-                    if v_grund:
-                        v_row = [datetime.now().strftime("%d.%m.%Y %H:%M"), v_target, v_grund, v_issuer]
-                        requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "V", "row": v_row}))
-                        df_p_new = df_personal.copy()
-                        df_p_new.loc[df_p_new['Name'] == v_target, 'Verwarnungen'] += 1
-                        payload = {"sheet": "P", "action": "update_all", "headers": df_p_new.columns.tolist(), "rows": df_p_new.values.tolist()}
-                        requests.post(WEBHOOK_URL, data=json.dumps(payload))
-                        st.success(f"⚠️ Verwarnung für {v_target} wurde registriert!")
-                        st.rerun()
-            st.divider()
-            st.subheader("Historie aller Verwarnungen")
-            st.dataframe(load_data(URL_V).iloc[::-1], use_container_width=True)
+                v_target = st.selectbox("Mitglied", team_liste)
+                v_grund = st.text_area("Grund")
+                v_issuer = st.selectbox("Von", team_liste)
+                if st.form_submit_button("Senden"):
+                    v_row = [datetime.now().strftime("%d.%m.%Y %H:%M"), v_target, v_grund, v_issuer]
+                    requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "V", "row": v_row}))
+                    df_p_new = df_personal.copy()
+                    df_p_new.loc[df_p_new['Name'] == v_target, 'Verwarnungen'] += 1
+                    requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "P", "action": "update_all", "headers": df_p_new.columns.tolist(), "rows": df_p_new.values.tolist()}))
+                    st.success("Erledigt!")
+                    st.rerun()
 
         with admin_sub4:
             st.subheader("Datenbank-Editor")
-            edited_p = st.data_editor(df_personal, use_container_width=True, num_rows="dynamic",
-                                      column_config={"Rang": st.column_config.SelectboxColumn("Rang", options=list(RANG_CONFIG.keys()))})
-            if st.button("Personal-Daten speichern"):
-                payload = {"sheet": "P", "action": "update_all", "headers": df_personal.columns.tolist(), "rows": edited_p.values.tolist()}
-                requests.post(WEBHOOK_URL, data=json.dumps(payload))
-                st.success("✅ Datenbank aktualisiert!")
+            edited_p = st.data_editor(df_personal, use_container_width=True, num_rows="dynamic", column_config={"Rang": st.column_config.SelectboxColumn("Rang", options=list(RANG_CONFIG.keys()))})
+            if st.button("Speichern"):
+                requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "P", "action": "update_all", "headers": df_personal.columns.tolist(), "rows": edited_p.values.tolist()}))
+                st.success("Gespeichert!")
                 st.rerun()
-
-    elif pw != "":
-        st.error("Falsches Passwort")
+    elif pw != "": st.error("Falsches Passwort")
