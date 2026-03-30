@@ -144,7 +144,7 @@ with tab_bericht:
             df_status_view['Sort'] = df_status_view['Rang'].map(lambda x: RANG_CONFIG.get(x, {}).get('order', 99))
             df_status_view = df_status_view.sort_values('Sort')[['Name', 'Rang']]
             st.dataframe(style_team_table(df_status_view, df_abmeldungen), use_container_width=True, height=400, hide_index=True)
-            st.info("💡 **Legende:** 🟢 Anwesend | 🟡 Bald weg | 🔴 Abwesend")
+            st.info("💡 **Legende:** 🟢 Anwesend | 🟡 Bald abwesend | 🔴 Abwesend")
 
 # ==========================================
 # 2. TAB: ADMIN-BEREICH
@@ -163,7 +163,7 @@ with tab_admin:
                 df_p_sort['Sort'] = df_p_sort['Rang'].map(lambda x: RANG_CONFIG.get(x, {}).get('order', 99))
                 df_p_sort = df_p_sort.sort_values('Sort').drop(columns=['Sort'])
                 st.dataframe(style_team_table(df_p_sort, df_abmeldungen), use_container_width=True, height=450)
-                st.caption("🟢 Anwesend | 🟡 Bald weg | 🔴 Abwesend")
+                st.caption("🟢 Anwesend | 🟡 Bald abwesend | 🔴 Abwesend")
             st.divider()
             st.subheader("Letzte Support-Berichte")
             st.dataframe(load_data(URL_B).iloc[::-1], use_container_width=True)
