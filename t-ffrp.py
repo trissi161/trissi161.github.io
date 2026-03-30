@@ -81,7 +81,7 @@ with tab_bericht:
         c1, c2 = st.columns(2)
         with c1:
             name = st.selectbox("Dein Name", team_liste)
-            spieler = st.text_input("Spieler")
+            spieler = st.text_input("Spieler (Discord Username)")
             beteiligte = st.text_area("Andere beteiligte Teamler")
         with c2:
             problem = st.text_area("Problem")
