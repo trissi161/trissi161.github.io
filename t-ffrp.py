@@ -47,67 +47,61 @@ def load_data(url):
         return pd.DataFrame()
 
 def get_status_info(name, df_a):
-    """Ermittelt Label und Farbe für den Anwesenheitsstatus."""
-    if df_a.empty: return "🟢 Anwesend", "#2ecc71"
+    """Ermittelt nur das Emoji für den Status."""
+    if df_a.empty: return "🟢"
     
     now = datetime.now().date()
     suche_name = str(name).strip().lower()
-    
-    # Filter für akzeptierte Abmeldungen
     aktive_a = df_a[(df_a['Status'].astype(str).str.strip() == 'Akzeptiert')].copy()
     
     for _, row in aktive_a.iterrows():
         if str(row['Name']).strip().lower() == suche_name:
             try:
-                # Flexible Datumskonvertierung für Google Sheets Format
                 start = pd.to_datetime(row['Von']).date()
                 ende = pd.to_datetime(row['Bis']).date()
-                
                 if start <= now <= ende:
-                    return "🔴 Abwesend", "#e74c3c"
+                    return "🔴"
                 elif now < start <= (now + timedelta(days=2)):
-                    return "🟡 Bald weg", "#f1c40f"
+                    return "🟡"
             except:
                 continue
-    return "🟢 Anwesend", "#2ecc71"
+    return "🟢"
 
 def style_team_table(df, df_a):
     if df.empty: return df
     
-    # 1. Status-Daten vorab generieren
-    labels = []
-    colors = []
-    for n in df['Name']:
-        l, c = get_status_info(n, df_a)
-        labels.append(l)
-        colors.append(c)
+    # Status-Emojis generieren
+    status_emojis = [get_status_info(n, df_a) for n in df['Name']]
     
-    # 2. Status-Spalte ganz vorne einfügen
-    df.insert(0, "Status", labels)
+    # Kopie erstellen um SettingWithCopyWarning zu vermeiden
+    df_styled = df.copy()
+    if "Status" not in df_styled.columns:
+        df_styled.insert(0, "Status", status_emojis)
     
     def apply_row_styles(row):
         rank = row['Rang']
         rank_color = RANG_CONFIG.get(rank, {}).get('color', '#ffffff')
-        # Status für diese Zeile ermitteln
-        st_label, st_color = get_status_info(row['Name'], df_a)
+        st_emoji = get_status_info(row['Name'], df_a)
         
         styles = []
         for col in row.index:
             if col == "Status":
-                styles.append(f'color: {st_color}; font-weight: bold;')
+                styles.append('text-align: center; font-size: 1.2rem;')
             elif col in ['Name', 'Rang']:
-                # Blasser bei Abwesenheit, aber nicht durchgestrichen
-                opacity = "0.4" if "🔴" in st_label else "1.0"
+                opacity = "0.4" if st_emoji == "🔴" else "1.0"
                 styles.append(f'color: {rank_color}; font-weight: bold; opacity: {opacity};')
             elif col == 'Verwarnungen':
-                v = int(row['Verwarnungen'])
-                v_c = '#2ecc71' if v == 0 else '#f1c40f' if v == 1 else '#e67e22' if v == 2 else '#e74c3c'
-                styles.append(f'color: {v_c}; font-weight: bold;')
+                try:
+                    v = int(row['Verwarnungen'])
+                    v_c = '#2ecc71' if v == 0 else '#f1c40f' if v == 1 else '#e67e22' if v == 2 else '#e74c3c'
+                    styles.append(f'color: {v_c}; font-weight: bold;')
+                except:
+                    styles.append('color: #d1d1d1;')
             else:
                 styles.append('color: #d1d1d1;')
         return styles
 
-    return df.style.apply(apply_row_styles, axis=1)
+    return df_styled.style.apply(apply_row_styles, axis=1)
 
 # --- DATEN LADEN ---
 df_personal = load_data(URL_P)
@@ -140,57 +134,30 @@ with tab_bericht:
                 requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "B", "row": row_data}))
                 st.success("✅ Bericht gespeichert!")
 
-with sub_tab2:
+    with sub_tab2:
         st.header("Abmeldung (LOA) beantragen")
-        
-        # 1. Das Eingabeformular
         with st.form("loa_form", clear_on_submit=True):
             a_name = st.selectbox("Dein Name", team_liste, key="loa_name")
             a_grund = st.text_area("Grund der Abmeldung")
             col1, col2 = st.columns(2)
-            with col1: 
-                a_von = st.date_input("Von", datetime.now())
-            with col2: 
-                a_bis = st.date_input("Bis", datetime.now() + timedelta(days=7))
+            with col1: a_von = st.date_input("Von", datetime.now())
+            with col2: a_bis = st.date_input("Bis", datetime.now() + timedelta(days=7))
             a_zusatz = st.text_input("Zusatz (z.B. Erreichbarkeit via DC)")
             
             if st.form_submit_button("Abmeldung absenden"):
-                loa_row = [
-                    datetime.now().strftime("%d.%m.%Y %H:%M"), 
-                    a_name, 
-                    a_grund, 
-                    str(a_von), 
-                    str(a_bis), 
-                    a_zusatz, 
-                    "Offen"
-                ]
+                loa_row = [datetime.now().strftime("%d.%m.%Y %H:%M"), a_name, a_grund, str(a_von), str(a_bis), a_zusatz, "Offen"]
                 requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "A", "row": loa_row}))
                 st.success("✅ Abmeldung eingereicht! Ein High-Team Mitglied muss diese noch bestätigen.")
 
-        # 2. Die Team-Verfügbarkeit (Für alle sichtbar)
         st.divider()
         st.subheader("📊 Aktuelle Team-Verfügbarkeit")
-        
         if not df_personal.empty:
-            # Daten vorbereiten: Kopie erstellen, um Originaldaten nicht zu verändern
             df_status_view = df_personal.copy()
-            
-            # Sortierung nach Rang-Ordnung
             df_status_view['Sort'] = df_status_view['Rang'].map(lambda x: RANG_CONFIG.get(x, {}).get('order', 99))
-            df_status_view = df_status_view.sort_values('Sort')
+            df_status_view = df_status_view.sort_values('Sort')[['Name', 'Rang']]
             
-            # Nur Name und Rang anzeigen (Status wird durch die Funktion eingefügt)
-            df_status_view = df_status_view[['Name', 'Rang']]
-            
-            # Tabelle mit Styling anzeigen
-            st.dataframe(
-                style_team_table(df_status_view, df_abmeldungen), 
-                use_container_width=True, 
-                height=400,
-                hide_index=True
-            )
-            
-            st.caption("🟢 = Anwesend | 🟡 = Abmeldung in Kürze | 🔴 = Abwesend (LOA)")
+            st.dataframe(style_team_table(df_status_view, df_abmeldungen), use_container_width=True, height=400, hide_index=True)
+            st.info("💡 **Legende:** 🟢 Anwesend | 🟡 Abmeldung in Kürze | 🔴 Abwesend (LOA)")
         else:
             st.info("Lade Team-Daten...")
 
@@ -211,6 +178,7 @@ with tab_admin:
                 df_p_sort['Sort'] = df_p_sort['Rang'].map(lambda x: RANG_CONFIG.get(x, {}).get('order', 99))
                 df_p_sort = df_p_sort.sort_values('Sort').drop(columns=['Sort'])
                 st.dataframe(style_team_table(df_p_sort, df_abmeldungen), use_container_width=True, height=450)
+                st.caption("🟢 Anwesend | 🟡 Bald weg | 🔴 Abwesend")
             
             st.divider()
             st.subheader("Letzte Support-Berichte")
@@ -218,12 +186,7 @@ with tab_admin:
 
         with admin_sub2:
             st.subheader("Offene Abmeldungsanträge")
-            
-            # WICHTIG: Daten hier ohne Cache laden
-            # Wir hängen einen Zeitstempel an, damit Google uns nicht die alte CSV schickt
             df_a_current = pd.read_csv(f"{URL_A}&cachebust={datetime.now().timestamp()}")
-            
-            # Status-Spalte säubern für den Filter
             df_a_current['Status'] = df_a_current['Status'].astype(str).str.strip()
             offene = df_a_current[df_a_current['Status'] == 'Offen']
             
@@ -233,35 +196,14 @@ with tab_admin:
                 for idx, row in offene.iterrows():
                     with st.expander(f"📌 Antrag von {row['Name']} ({row['Von']} bis {row['Bis']})"):
                         st.write(f"**Grund:** {row['Grund']}")
-                        
                         if st.button(f"Haken setzen für {row['Name']}", key=f"acc_{idx}"):
-                            # 1. Status im lokalen DataFrame ändern
                             df_a_current.at[idx, 'Status'] = 'Akzeptiert'
-                            
-                            # 2. Payload vorbereiten
-                            # Wir stellen sicher, dass keine NaN Werte (leere Zellen) das JSON kaputt machen
                             df_to_send = df_a_current.fillna("")
-                            
-                            payload = {
-                                "sheet": "A", 
-                                "action": "update_all", 
-                                "headers": df_to_send.columns.tolist(), 
-                                "rows": df_to_send.values.tolist()
-                            }
-                            
-                            with st.spinner('Speichere in Google Sheets...'):
-                                try:
-                                    res = requests.post(WEBHOOK_URL, data=json.dumps(payload))
-                                    if res.status_code == 200:
-                                        st.success(f"✅ Status für {row['Name']} geändert!")
-                                        # Kurze Pause, damit Google Zeit zum Speichern hat
-                                        import time
-                                        time.sleep(1) 
-                                        st.rerun()
-                                    else:
-                                        st.error(f"Fehler: Google Script hat mit {res.status_code} geantwortet.")
-                                except Exception as e:
-                                    st.error(f"Verbindung zum Webhook fehlgeschlagen: {e}")
+                            payload = {"sheet": "A", "action": "update_all", "headers": df_to_send.columns.tolist(), "rows": df_to_send.values.tolist()}
+                            requests.post(WEBHOOK_URL, data=json.dumps(payload))
+                            import time
+                            time.sleep(1) 
+                            st.rerun()
 
         with admin_sub3:
             st.subheader("Verwarnung ausstellen")
