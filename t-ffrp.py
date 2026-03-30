@@ -48,22 +48,38 @@ def load_data(url):
 
 def get_status_info(name, df_a):
     if df_a.empty: return "Aktiv", None
+    
+    # Heutiges Datum ohne Uhrzeit
     now = datetime.now().date()
+    
     # Nur akzeptierte Abmeldungen für diesen Nutzer
     user_a = df_a[(df_a['Name'] == name) & (df_a['Status'] == 'Akzeptiert')]
     
     for _, row in user_a.iterrows():
         try:
-            start = datetime.strptime(str(row['Von']), "%Y-%m-%d").date()
-            ende = datetime.strptime(str(row['Bis']), "%Y-%m-%d").date()
+            # Umwandlung der Daten (Sicherheitscheck für verschiedene Formate)
+            start_val = row['Von']
+            ende_val = row['Bis']
             
+            # Falls es bereits ein Datumsobjekt ist, sonst umwandeln
+            if isinstance(start_val, str):
+                start = datetime.strptime(start_val, "%Y-%m-%d").date()
+            else:
+                start = pd.to_datetime(start_val).date()
+                
+            if isinstance(ende_val, str):
+                ende = datetime.strptime(ende_val, "%Y-%m-%d").date()
+            else:
+                ende = pd.to_datetime(ende_val).date()
+            
+            # Logik-Check
             if start <= now <= ende:
-                return "Abgemeldet", f" (Abwesend bis {ende.strftime('%d.%m.')})"
+                return "Abgemeldet", f" (Bis {ende.strftime('%d.%m.')})"
             elif now < start <= (now + timedelta(days=2)):
                 return "Abmeldung nah", f" (Ab {start.strftime('%d.%m.')})"
-        except: continue
+        except Exception as e:
+            continue 
     return "Aktiv", None
-
 def style_team_table(df, df_a):
     if df.empty: return df
     
