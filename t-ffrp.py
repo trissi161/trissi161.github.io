@@ -47,41 +47,74 @@ def load_data(url):
         return pd.DataFrame()
 
 def get_status_info(name, df_a):
-    if df_a.empty: return "Aktiv", None
+    if df_a.empty: 
+        return "Aktiv", None
     
-    # Heutiges Datum ohne Uhrzeit
+    # Heutiges Datum (nur das Datum, keine Uhrzeit)
     now = datetime.now().date()
     
-    # Nur akzeptierte Abmeldungen für diesen Nutzer
-    user_a = df_a[(df_a['Name'] == name) & (df_a['Status'] == 'Akzeptiert')]
+    # Wir bereinigen den Namen (keine Leerzeichen am Ende)
+    search_name = str(name).strip()
+    
+    # Filter: Name muss passen UND Status muss exakt 'Akzeptiert' sein
+    # Wir machen df_a['Name'] auch sauber für den Vergleich
+    user_a = df_a[(df_a['Name'].astype(str).str.strip() == search_name) & 
+                  (df_a['Status'].astype(str).str.strip() == 'Akzeptiert')]
     
     for _, row in user_a.iterrows():
         try:
-            # Umwandlung der Daten (Sicherheitscheck für verschiedene Formate)
-            start_val = row['Von']
-            ende_val = row['Bis']
+            # Flexible Umwandlung der Spalten 'Von' und 'Bis'
+            # pd.to_datetime erkennt das Format YYYY-MM-DD aus deinem Screenshot automatisch
+            start = pd.to_datetime(row['Von']).date()
+            ende = pd.to_datetime(row['Bis']).date()
             
-            # Falls es bereits ein Datumsobjekt ist, sonst umwandeln
-            if isinstance(start_val, str):
-                start = datetime.strptime(start_val, "%Y-%m-%d").date()
-            else:
-                start = pd.to_datetime(start_val).date()
-                
-            if isinstance(ende_val, str):
-                ende = datetime.strptime(ende_val, "%Y-%m-%d").date()
-            else:
-                ende = pd.to_datetime(ende_val).date()
-            
-            # Logik-Check
+            # Logik-Check:
+            # 1. Ist heute zwischen (oder gleich) Start und Ende? -> Abgemeldet
             if start <= now <= ende:
                 return "Abgemeldet", f" (Bis {ende.strftime('%d.%m.')})"
+            
+            # 2. Ist der Start in den nächsten 2 Tagen? -> Abmeldung nah
             elif now < start <= (now + timedelta(days=2)):
                 return "Abmeldung nah", f" (Ab {start.strftime('%d.%m.')})"
         except Exception as e:
+            # Falls ein Datum mal leer ist oder ein falsches Format hat, überspringen
             continue 
+            
     return "Aktiv", None
+
 def style_team_table(df, df_a):
     if df.empty: return df
+    
+    def apply_styles(row):
+        rank = row['Rang']
+        color = RANG_CONFIG.get(rank, {}).get('color', '#ffffff')
+        
+        # Status hier abfragen
+        status, info = get_status_info(row['Name'], df_a)
+        
+        styles = []
+        for col in row.index:
+            if col in ['Name', 'Rang']:
+                # Basis-Stil (Farbe des Rangs)
+                s = f'color: {color}; font-weight: bold;'
+                
+                # Wenn abgemeldet -> Durchstreichen & Deckkraft runter
+                if status == "Abgemeldet":
+                    s += "text-decoration: line-through; opacity: 0.5;"
+                # Wenn Abmeldung nah -> Gelber Unterstrich
+                elif status == "Abmeldung nah":
+                    s += "border-bottom: 2px dashed #f1c40f;"
+                
+                styles.append(s)
+            elif col == 'Verwarnungen':
+                v = int(row['Verwarnungen'])
+                v_col = '#2ecc71' if v == 0 else '#f1c40f' if v == 1 else '#e67e22' if v == 2 else '#e74c3c'
+                styles.append(f'color: {v_col}; font-weight: bold;')
+            else:
+                styles.append('color: #d1d1d1;')
+        return styles
+    
+    return df.style.apply(apply_styles, axis=1)
     
     def apply_text_colors(row):
         rank = row['Rang']
