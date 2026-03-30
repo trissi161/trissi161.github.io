@@ -229,26 +229,31 @@ with tab_admin:
                 st.success("Gespeichert!")
                 st.rerun()
 
-        with admin_sub5: 
-            st.subheader("Team-Derank protokollieren")
-            
+with admin_sub5: 
+            st.subheader("Team-Rang Änderung protokollieren")
+
+            # 1. Auswahl des Mitglieds (AUSSERHALB des Formulars für Live-Update)
+            d_target = st.selectbox("Mitglied auswählen", team_liste, key="dr_target")
+
+            # Aktuellen Rang live aus den Daten ziehen
+            if not df_personal.empty and d_target:
+                aktueller_rang = df_personal[df_personal['Name'] == d_target]['Rang'].values[0]
+                st.info(f"Aktueller Rang von **{d_target}**: `{aktueller_rang}`")
+            else:
+                aktueller_rang = "Unbekannt"
+
+            # 2. Das Formular für die restlichen Daten
             with st.form("derank_form", clear_on_submit=True):
-                d_target = st.selectbox("Mitglied auswählen", team_liste)
-                
-                # Aktuellen Rang finden
-                aktueller_rang = df_personal[df_personal['Name'] == d_target]['Rang'].values[0] if not df_personal.empty else "Unbekannt"
-                st.info(f"Aktueller Rang von {d_target}: **{aktueller_rang}**")
-                
                 # Mögliche neue Ränge (alle außer der aktuelle)
-                moegliche_raenge = [r for r in RANG_CONFIG.keys() if r != aktueller_rang]
-                d_new_rank = st.selectbox("Neuer Rang", moegliche_raenge)
+                alle_raenge = list(RANG_CONFIG.keys())
+                d_new_rank = st.selectbox("Neuer Rang", alle_raenge)
                 
-                d_grund = st.text_area("Grund für den Derank / die Änderung")
+                d_grund = st.text_area("Grund für die Änderung")
                 d_issuer = st.selectbox("Ausgeführt von (Admin)", team_liste, key="derank_admin")
                 
-                if st.form_submit_button("Derank durchführen & protokollieren"):
-                    if d_grund:
-                        # 1. Protokoll-Eintrag für Blatt 'D'
+                if st.form_submit_button("Rang-Änderung speichern & protokollieren"):
+                    if d_target and d_grund and d_new_rank != aktueller_rang:
+                        # Protokoll-Eintrag für Blatt 'D'
                         derank_log = [
                             datetime.now().strftime("%d.%m.%Y %H:%M"),
                             d_target,
@@ -258,7 +263,7 @@ with tab_admin:
                             d_issuer
                         ]
                         
-                        # 2. Personal-Datenblatt 'P' aktualisieren
+                        # Personal-Datenblatt 'P' lokal aktualisieren
                         df_p_updated = df_personal.copy()
                         df_p_updated.loc[df_p_updated['Name'] == d_target, 'Rang'] = d_new_rank
                         
@@ -275,21 +280,18 @@ with tab_admin:
                             }
                             requests.post(WEBHOOK_URL, data=json.dumps(payload_p))
                             
-                            st.success(f"✅ {d_target} wurde auf {d_new_rank} abgestuft. Protokoll gespeichert!")
+                            st.success(f"✅ {d_target} wurde erfolgreich auf {d_new_rank} gesetzt!")
                             time.sleep(1)
                             st.rerun()
                         except Exception as e:
-                            st.error(f"Fehler beim Speichern: {e}")
+                            st.error(f"Fehler: {e}")
+                    elif d_new_rank == aktueller_rang:
+                        st.warning("Der gewählte Rang ist identisch mit dem aktuellen Rang.")
                     else:
-                        st.warning("Bitte gib einen Grund an.")
+                        st.warning("Bitte alle Felder ausfüllen.")
 
             st.divider()
-            st.subheader("📜 Derank-Historie")
+            st.subheader("📜 Historie der Rang-Änderungen")
             df_deranks = load_data(URL_D)
             if not df_deranks.empty:
                 st.dataframe(df_deranks.iloc[::-1], use_container_width=True, hide_index=True)
-            else:
-                st.write("Noch keine Deranks protokolliert.")
-    elif pw != "": st.error("Falsches Passwort")
-
-
