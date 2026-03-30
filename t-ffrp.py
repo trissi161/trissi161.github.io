@@ -74,7 +74,7 @@ with tab_admin:
             with st.expander("➕ Neues Mitglied registrieren", expanded=False):
                 with st.form("new_member_form", clear_on_submit=True):
                     new_name = st.text_input("Vollständiger Name")
-                    new_rank = st.selectbox("Rang", ["Projektleitung", "Management", "Administrator", "Moderator", "Supporter", "Guide"])
+                    new_rank = st.selectbox("Rang", ["Projektleitung", "Stellv. Projektleitung", "Management", "Teamleitung", "Stellv. Teamleitung", "Administrative Leitung", "Administrator", "Moderator", "Supporter", "Test-Supporter"])
                     # Beitrittsdatum standardmäßig auf HEUTE gesetzt
                     new_date = st.date_input("Beitrittsdatum", datetime.now())
                     
