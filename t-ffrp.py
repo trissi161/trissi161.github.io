@@ -9,7 +9,7 @@ st.set_page_config(page_title="FF Team-Panel", page_icon="👾", layout="wide")
 
 SHEET_ID = "1TZHjV7RTrE27p-hapfMe11eCUXhS9QFAd53OCQjpeOc"
 # Stelle sicher, dass dies deine aktuelle Web-App-URL ist!
-WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyy4XXxcY4-L7iU0X687hxXEluTwzFNv2XWU14cdHr3FEIlkkw-45eawPYA6cy0ICUN/exec"
+WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwmMO3BbEqFW-TjeN439WF4UNl1akew0Db2aCdkb5vT7ci1QshaRET1ErDRH6z5qN36/exec"
 
 URL_P = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=P"
 URL_B = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=B"
