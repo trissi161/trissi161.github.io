@@ -8,7 +8,7 @@ from datetime import datetime
 st.set_page_config(page_title="FF Team-Panel", page_icon="👾", layout="wide")
 
 SHEET_ID = "1TZHjV7RTrE27p-hapfMe11eCUXhS9QFAd53OCQjpeOc"
-WEBHOOK_URL = "DEINE_KOPIERTE_WEB_APP_URL_HIER" # Deine URL einfügen!
+WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyy4XXxcY4-L7iU0X687hxXEluTwzFNv2XWU14cdHr3FEIlkkw-45eawPYA6cy0ICUN/exec" # Deine URL einfügen!
 
 URL_P = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=P"
 URL_B = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=B"
