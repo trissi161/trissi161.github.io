@@ -140,20 +140,59 @@ with tab_bericht:
                 requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "B", "row": row_data}))
                 st.success("✅ Bericht gespeichert!")
 
-    with sub_tab2:
+with sub_tab2:
         st.header("Abmeldung (LOA) beantragen")
+        
+        # 1. Das Eingabeformular
         with st.form("loa_form", clear_on_submit=True):
             a_name = st.selectbox("Dein Name", team_liste, key="loa_name")
             a_grund = st.text_area("Grund der Abmeldung")
             col1, col2 = st.columns(2)
-            with col1: a_von = st.date_input("Von", datetime.now())
-            with col2: a_bis = st.date_input("Bis", datetime.now() + timedelta(days=7))
+            with col1: 
+                a_von = st.date_input("Von", datetime.now())
+            with col2: 
+                a_bis = st.date_input("Bis", datetime.now() + timedelta(days=7))
             a_zusatz = st.text_input("Zusatz (z.B. Erreichbarkeit via DC)")
             
             if st.form_submit_button("Abmeldung absenden"):
-                loa_row = [datetime.now().strftime("%d.%m.%Y %H:%M"), a_name, a_grund, str(a_von), str(a_bis), a_zusatz, "Offen"]
+                loa_row = [
+                    datetime.now().strftime("%d.%m.%Y %H:%M"), 
+                    a_name, 
+                    a_grund, 
+                    str(a_von), 
+                    str(a_bis), 
+                    a_zusatz, 
+                    "Offen"
+                ]
                 requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "A", "row": loa_row}))
                 st.success("✅ Abmeldung eingereicht! Ein High-Team Mitglied muss diese noch bestätigen.")
+
+        # 2. Die Team-Verfügbarkeit (Für alle sichtbar)
+        st.divider()
+        st.subheader("📊 Aktuelle Team-Verfügbarkeit")
+        
+        if not df_personal.empty:
+            # Daten vorbereiten: Kopie erstellen, um Originaldaten nicht zu verändern
+            df_status_view = df_personal.copy()
+            
+            # Sortierung nach Rang-Ordnung
+            df_status_view['Sort'] = df_status_view['Rang'].map(lambda x: RANG_CONFIG.get(x, {}).get('order', 99))
+            df_status_view = df_status_view.sort_values('Sort')
+            
+            # Nur Name und Rang anzeigen (Status wird durch die Funktion eingefügt)
+            df_status_view = df_status_view[['Name', 'Rang']]
+            
+            # Tabelle mit Styling anzeigen
+            st.dataframe(
+                style_team_table(df_status_view, df_abmeldungen), 
+                use_container_width=True, 
+                height=400,
+                hide_index=True
+            )
+            
+            st.caption("🟢 = Anwesend | 🟡 = Abmeldung in Kürze | 🔴 = Abwesend (LOA)")
+        else:
+            st.info("Lade Team-Daten...")
 
 # ==========================================
 # 2. TAB: ADMIN-BEREICH
