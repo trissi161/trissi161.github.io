@@ -37,7 +37,7 @@ def load_data(url):
 df_personal = load_data(URL_P)
 team_liste = df_personal["Name"].dropna().tolist() if not df_personal.empty else ["Lade Fehler..."]
 
-tab_bericht, tab_admin = st.tabs(["📝 Support-Bericht", "🔒 Admin-Bereich"])
+tab_bericht, tab_admin = st.tabs(["📝 Support-Bericht", "🔒 High-Team-Bereich"])
 
 # ==========================================
 # 1. TAB: SUPPORT-BERICHT
