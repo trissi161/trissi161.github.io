@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 
 # --- KONFIGURATION ---
-st.set_page_config(page_title="RDF Team-Panel", page_icon="🚑", layout="wide")
+st.set_page_config(page_title="FF Team-Panel", page_icon="👾", layout="wide")
 
 SHEET_ID = "1TZHjV7RTrE27p-hapfMe11eCUXhS9QFAd53OCQjpeOc"
 WEBHOOK_URL = "DEINE_KOPIERTE_WEB_APP_URL_HIER" # Deine URL einfügen!
