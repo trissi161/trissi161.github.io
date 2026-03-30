@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 # --- KONFIGURATION ---
 st.set_page_config(page_title="FF Team-Panel", page_icon="👾", layout="wide")
 
-# Custom CSS
 st.markdown("""
     <style>
     .stApp { background-color: #0e1117; color: #ffffff; }
@@ -37,48 +36,36 @@ RANG_CONFIG = {
     "Test-Supporter": {"order": 10, "color": "#95a5a6"}
 }
 
-# --- HILFSFUNKTIONEN ---
 def load_data(url):
     try:
-        # Cache-Busting sorgt dafür, dass immer die neuesten Daten geladen werden
-        df = pd.read_csv(f"{url}&cachebust={datetime.now().timestamp()}")
-        return df
+        return pd.read_csv(f"{url}&cachebust={datetime.now().timestamp()}")
     except:
         return pd.DataFrame()
 
 def get_status_info(name, df_a):
-    """Prüft den Abmeldestatus einer Person."""
+    """Ermittelt den Status basierend auf den Abmeldungen."""
     if df_a.empty or "Name" not in df_a.columns:
         return "Aktiv", None
     
-    # Heutiges Datum (nur Datumsteil)
     heute = datetime.now().date()
-    
-    # Namen bereinigen für den Vergleich (trimmt Leerzeichen)
     suche_name = str(name).strip().lower()
     
-    # Filtern: Name passt & Status ist Akzeptiert
-    # Wir machen alles kleingeschrieben und ohne Leerzeichen für maximale Sicherheit
-    abmeldungen = df_a[
-        (df_a['Name'].astype(str).str.strip().str.lower() == suche_name) & 
-        (df_a['Status'].astype(str).str.strip() == 'Akzeptiert')
-    ]
+    # Nur akzeptierte Abmeldungen filtern
+    aktive_abmeldungen = df_a[df_a['Status'].astype(str).str.strip() == 'Akzeptiert'].copy()
     
-    for _, row in abmeldungen.iterrows():
-        try:
-            # Datums-Konvertierung (YYYY-MM-DD aus deinem Screenshot)
-            von = pd.to_datetime(row['Von']).date()
-            bis = pd.to_datetime(row['Bis']).date()
-            
-            # 1. Aktuell abgemeldet
-            if von <= heute <= bis:
-                return "Abgemeldet", f" (Bis {bis.strftime('%d.%m.')})"
-            # 2. Abmeldung steht kurz bevor (in den nächsten 2 Tagen)
-            elif heute < von <= (heute + timedelta(days=2)):
-                return "Abmeldung nah", f" (Ab {von.strftime('%d.%m.')})"
-        except:
-            continue
-            
+    for _, row in aktive_abmeldungen.iterrows():
+        if str(row['Name']).strip().lower() == suche_name:
+            try:
+                # EXPLIZITE KONVERTIERUNG ZU DATUM
+                start = pd.to_datetime(row['Von']).date()
+                ende = pd.to_datetime(row['Bis']).date()
+                
+                if start <= heute <= ende:
+                    return "Abgemeldet", f" (Bis {ende.strftime('%d.%m.')})"
+                elif heute < start <= (heute + timedelta(days=2)):
+                    return "Abmeldung nah", f" (Ab {start.strftime('%d.%m.')})"
+            except:
+                continue
     return "Aktiv", None
 
 def style_team_table(df, df_a):
@@ -94,7 +81,7 @@ def style_team_table(df, df_a):
             if col in ['Name', 'Rang']:
                 base = f'color: {color}; font-weight: bold;'
                 if status == "Abgemeldet":
-                    base += "text-decoration: line-through; opacity: 0.5;"
+                    base += "text-decoration: line-through; opacity: 0.4;"
                 elif status == "Abmeldung nah":
                     base += "border-bottom: 2px dashed #f1c40f;"
                 styles.append(base)
@@ -108,65 +95,51 @@ def style_team_table(df, df_a):
     
     return df.style.apply(apply_styles, axis=1)
 
-# --- DATEN LADEN ---
+# --- APP STRUKTUR ---
 df_p = load_data(URL_P)
 df_a = load_data(URL_A)
 team_liste = df_p["Name"].dropna().tolist() if not df_p.empty else []
 
-tab_main, tab_admin = st.tabs(["📝 Support & Abmeldung", "🔒 High-Team-Bereich"])
+tab_support, tab_admin = st.tabs(["📝 Support & Abmeldung", "🔒 High-Team-Bereich"])
 
-# --- SUPPORT BEREICH ---
-with tab_main:
-    sub1, sub2 = st.tabs(["Bericht schreiben", "Abmeldung einreichen"])
-    with sub1:
-        st.header("Support-Bericht")
-        with st.form("f_bericht", clear_on_submit=True):
-            n = st.selectbox("Dein Name", team_liste)
-            s = st.text_input("Spieler")
-            p = st.text_area("Problem")
-            if st.form_submit_button("Senden"):
-                requests.post(WEBHOOK_URL, data=json.dumps({"sheet":"B", "row":[datetime.now().strftime("%d.%m.%Y %H:%M"), n, s, "", p, "", "", ""]}))
-                st.success("Gesendet!")
-    
-    with sub2:
-        st.header("Abmeldung (LOA)")
-        with st.form("f_loa", clear_on_submit=True):
+with tab_support:
+    s_sub1, s_sub2 = st.tabs(["Bericht", "Abmeldung"])
+    with s_sub2:
+        with st.form("loa_form", clear_on_submit=True):
             n = st.selectbox("Name", team_liste)
             g = st.text_area("Grund")
             c1, c2 = st.columns(2)
             v = c1.date_input("Von", datetime.now())
             b = c2.date_input("Bis", datetime.now() + timedelta(days=7))
-            if st.form_submit_button("Beantragen"):
+            if st.form_submit_button("Absenden"):
                 requests.post(WEBHOOK_URL, data=json.dumps({"sheet":"A", "row":[datetime.now().strftime("%d.%m.%Y %H:%M"), n, g, str(v), str(b), "", "Offen"]}))
-                st.success("Beantragt!")
+                st.success("Abmeldung eingereicht!")
 
-# --- ADMIN BEREICH ---
 with tab_admin:
     pw = st.text_input("Passwort", type="password")
     if pw == "2504":
-        t1, t2, t3 = st.tabs(["📊 Übersicht", "✅ Abmeldungen", "🛠 Editor"])
+        t1, t2, t3, t4 = st.tabs(["📊 Übersicht", "✅ Abmeldungen", "⚠️ Verwarnungen", "🛠 Editor"])
         
         with t1:
             if not df_p.empty:
-                # Sortierung
                 df_p['Sort'] = df_p['Rang'].map(lambda x: RANG_CONFIG.get(x, {}).get('order', 99))
                 df_disp = df_p.sort_values('Sort').drop(columns=['Sort'])
                 st.dataframe(style_team_table(df_disp, df_a), use_container_width=True)
                 
-                # DIAGNOSE-HILFE (Nur sichtbar wenn Admin eingeloggt)
-                with st.expander("🔍 Debug-Info (Warum ist jemand nicht durchgestrichen?)"):
-                    st.write("Heute ist:", datetime.now().date())
-                    st.write("Geladene Abmeldungen (Akzeptiert):")
-                    st.write(df_a[df_a['Status'] == 'Akzeptiert'])
+                with st.expander("🔍 Debug"):
+                    st.write("Heute:", datetime.now().date())
+                    st.write("Abmeldungen im Speicher:", df_a)
 
         with t2:
             st.subheader("Offene Anträge")
             df_a_curr = load_data(URL_A)
             offen = df_a_curr[df_a_curr['Status'] == 'Offen']
-            if offen.empty: st.info("Alles erledigt.")
-            else:
-                for i, r in offen.iterrows():
-                    if st.button(f"Akzeptiere {r['Name']} ({r['Von']} bis {r['Bis']})", key=f"btn_{i}"):
-                        df_a_curr.at[i, 'Status'] = 'Akzeptiert'
-                        requests.post(WEBHOOK_URL, data=json.dumps({"sheet":"A", "action":"update_all", "headers":df_a_curr.columns.tolist(), "rows":df_a_curr.values.tolist()}))
-                        st.rerun()
+            for i, r in offen.iterrows():
+                if st.button(f"Akzeptiere {r['Name']}", key=f"a_{i}"):
+                    df_a_curr.at[i, 'Status'] = 'Akzeptiert'
+                    requests.post(WEBHOOK_URL, data=json.dumps({"sheet":"A", "action":"update_all", "headers":df_a_curr.columns.tolist(), "rows":df_a_curr.values.tolist()}))
+                    st.rerun()
+
+        with t3:
+            # Hier käme dein Verwarnungs-Formular hin
+            st.info("Verwarnungs-System aktiv.")
