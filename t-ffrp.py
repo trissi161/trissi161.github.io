@@ -179,23 +179,46 @@ with tab_admin:
 
         with admin_sub2:
             st.subheader("Offene Abmeldungsanträge")
+            # Daten frisch laden
             df_a_current = load_data(URL_A)
-            # Bereinigung Status-Filter
-            offene = df_a_current[df_a_current['Status'].astype(str).str.strip() == 'Offen']
             
-            if offene.empty:
-                st.info("Keine neuen Abmeldungen zum Bearbeiten.")
+            if df_a_current.empty:
+                st.info("Keine Daten in Blatt A gefunden.")
             else:
-                for idx, row in offene.iterrows():
-                    with st.expander(f"📌 Antrag von {row['Name']} ({row['Von']} bis {row['Bis']})"):
-                        st.write(f"**Grund:** {row['Grund']}")
-                        st.write(f"**Zusatz:** {row['Zusatz']}")
-                        if st.button(f"Akzeptieren", key=f"acc_{idx}"):
-                            df_a_current.at[idx, 'Status'] = 'Akzeptiert'
-                            payload = {"sheet": "A", "action": "update_all", "headers": df_a_current.columns.tolist(), "rows": df_a_current.values.tolist()}
-                            requests.post(WEBHOOK_URL, data=json.dumps(payload))
-                            st.success(f"Abmeldung für {row['Name']} akzeptiert!")
-                            st.rerun()
+                # Wir filtern die Zeilen, wo der Status 'Offen' ist
+                # .strip() entfernt unsichtbare Leerzeichen, die das Akzeptieren verhindern könnten
+                offene = df_a_current[df_a_current['Status'].astype(str).str.strip() == 'Offen']
+                
+                if offene.empty:
+                    st.info("Keine neuen Abmeldungen zum Bearbeiten.")
+                else:
+                    for idx, row in offene.iterrows():
+                        with st.expander(f"📌 Antrag von {row['Name']} ({row['Von']} bis {row['Bis']})"):
+                            st.write(f"**Grund:** {row['Grund']}")
+                            st.write(f"**Zusatz:** {row.get('Zusatz', 'Kein Zusatz')}")
+                            
+                            # Der Button nutzt den Index 'idx' aus dem originalen df_a_current
+                            if st.button(f"Haken setzen für {row['Name']}", key=f"acc_{idx}"):
+                                # Wir setzen den Status exakt auf 'Akzeptiert'
+                                df_a_current.at[idx, 'Status'] = 'Akzeptiert'
+                                
+                                # Das gesamte Sheet aktualisieren
+                                payload = {
+                                    "sheet": "A", 
+                                    "action": "update_all", 
+                                    "headers": df_a_current.columns.tolist(), 
+                                    "rows": df_a_current.values.tolist()
+                                }
+                                
+                                try:
+                                    res = requests.post(WEBHOOK_URL, data=json.dumps(payload))
+                                    if res.status_code == 200:
+                                        st.success(f"✅ Abmeldung für {row['Name']} wurde gespeichert!")
+                                        st.rerun()
+                                    else:
+                                        st.error("Fehler beim Senden an Google Sheets.")
+                                except Exception as e:
+                                    st.error(f"Verbindung zum Webhook fehlgeschlagen: {e}")
 
         with admin_sub3:
             st.subheader("Verwarnung ausstellen")
