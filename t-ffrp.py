@@ -154,7 +154,7 @@ with tab_admin:
     pw = st.text_input("Passwort", type="password")
     
     if pw == "2504":
-        admin_sub1, admin_sub2, admin_sub3, admin_sub4 = st.tabs(["📊 Team-Übersicht", "✅ Abmeldungen prüfen", "⚠️ Verwarnungen", "🛠 Bearbeitungs-Modus"])
+        admin_sub1, admin_sub2, admin_sub3, admin_sub4, admin_sub5 = st.tabs(["📊 Team-Übersicht", "✅ Abmeldungen prüfen", "⚠️ Verwarnungen", "🛠 Bearbeitungs-Modus", "⬇️ Derank"])
         
         with admin_sub1:
             st.subheader("Aktueller Team-Status")
