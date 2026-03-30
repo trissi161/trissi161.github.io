@@ -186,24 +186,77 @@ with tab_admin:
 
         with admin_sub2:
             st.subheader("Offene Abmeldungsanträge")
+            # Daten frisch laden
             df_a_current = pd.read_csv(f"{URL_A}&cachebust={datetime.now().timestamp()}")
             df_a_current['Status'] = df_a_current['Status'].astype(str).str.strip()
+            
+            # 1. SEKTION: NEUE ANTRÄGE BESTÄTIGEN
             offene = df_a_current[df_a_current['Status'] == 'Offen']
             
             if offene.empty:
                 st.info("Keine neuen Abmeldungen zum Bearbeiten.")
             else:
                 for idx, row in offene.iterrows():
-                    with st.expander(f"📌 Antrag von {row['Name']} ({row['Von']} bis {row['Bis']})"):
+                    with st.expander(f"📌 NEU: Antrag von {row['Name']} ({row['Von']} bis {row['Bis']})"):
                         st.write(f"**Grund:** {row['Grund']}")
                         if st.button(f"Haken setzen für {row['Name']}", key=f"acc_{idx}"):
                             df_a_current.at[idx, 'Status'] = 'Akzeptiert'
-                            df_to_send = df_a_current.fillna("")
-                            payload = {"sheet": "A", "action": "update_all", "headers": df_to_send.columns.tolist(), "rows": df_to_send.values.tolist()}
+                            payload = {
+                                "sheet": "A", "action": "update_all", 
+                                "headers": df_a_current.columns.tolist(), 
+                                "rows": df_a_current.fillna("").values.tolist()
+                            }
                             requests.post(WEBHOOK_URL, data=json.dumps(payload))
-                            import time
-                            time.sleep(1) 
+                            st.success(f"✅ {row['Name']} akzeptiert!")
+                            time.sleep(1)
                             st.rerun()
+
+            st.divider()
+            
+            # 2. SEKTION: AKTIVE ABMELDUNGEN VERWALTEN / ABBRECHEN
+            st.subheader("Aktive & Zukünftige Abmeldungen")
+            akzeptiert = df_a_current[df_a_current['Status'] == 'Akzeptiert'].copy()
+            
+            if akzeptiert.empty:
+                st.write("Aktuell keine aktiven Abmeldungen.")
+            else:
+                # Wir fügen eine temporäre Spalte für die Auswahl hinzu
+                akzeptiert.insert(0, "Auswählen", False)
+                
+                edited_a = st.data_editor(
+                    akzeptiert,
+                    column_config={"Auswählen": st.column_config.CheckboxColumn("Abbrechen?", default=False)},
+                    disabled=["Zeitpunkt", "Name", "Grund", "Von", "Bis", "Zusatz", "Status"],
+                    hide_index=True,
+                    use_container_width=True,
+                    key="cancel_editor"
+                )
+
+                # Prüfen, welche Zeilen ausgewählt wurden
+                to_delete = edited_a[edited_a["Auswählen"] == True]
+                
+                if not to_delete.empty:
+                    if st.button(f"❌ {len(to_delete)} Abmeldung(en) abbrechen"):
+                        # Wir behalten im originalen DF nur die Zeilen, die NICHT ausgewählt wurden
+                        # (Wir identifizieren sie über den Namen und den Zeitpunkt)
+                        for _, del_row in to_delete.iterrows():
+                            df_a_current = df_a_current[~(
+                                (df_a_current['Name'] == del_row['Name']) & 
+                                (df_a_current['Zeitpunkt'] == del_row['Zeitpunkt'])
+                            )]
+                        
+                        payload = {
+                            "sheet": "A", "action": "update_all", 
+                            "headers": df_a_current.columns.tolist(), 
+                            "rows": df_a_current.fillna("").values.tolist()
+                        }
+                        
+                        with st.spinner('Lösche aus Datenbank...'):
+                            res = requests.post(WEBHOOK_URL, data=json.dumps(payload))
+                            if res.status_code == 200:
+                                st.success("Abmeldungen erfolgreich entfernt!")
+                                time.sleep(1)
+                                st.rerun()
 
         with admin_sub3:
             st.subheader("Verwarnung ausstellen")
