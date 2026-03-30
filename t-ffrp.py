@@ -108,13 +108,13 @@ df_personal = load_data(URL_P)
 df_abmeldungen = load_data(URL_A)
 team_liste = df_personal["Name"].dropna().tolist() if not df_personal.empty else ["Lade Fehler..."]
 
-tab_bericht, tab_admin = st.tabs(["📝 Support-Bereich", "🔒 High-Team-Bereich"])
+tab_bericht, tab_admin = st.tabs(["📝 Team-Bereich", "🔒 High-Team-Bereich"])
 
 # ==========================================
 # 1. TAB: SUPPORT-BERICHT & ABMELDUNG
 # ==========================================
 with tab_bericht:
-    sub_tab1, sub_tab2 = st.tabs(["Bericht einreichen", "Abmeldung einreichen"])
+    sub_tab1, sub_tab2 = st.tabs(["Support Berichte", "Abmeldungen"])
     
     with sub_tab1:
         st.header("Support-Bericht einreichen")
@@ -135,7 +135,7 @@ with tab_bericht:
                 st.success("✅ Bericht gespeichert!")
 
     with sub_tab2:
-        st.header("Abmeldung (LOA) beantragen")
+        st.header("Abmeldung beantragen")
         with st.form("loa_form", clear_on_submit=True):
             a_name = st.selectbox("Dein Name", team_liste, key="loa_name")
             a_grund = st.text_area("Grund der Abmeldung")
@@ -157,7 +157,7 @@ with tab_bericht:
             df_status_view = df_status_view.sort_values('Sort')[['Name', 'Rang']]
             
             st.dataframe(style_team_table(df_status_view, df_abmeldungen), use_container_width=True, height=400, hide_index=True)
-            st.info("💡 **Legende:** 🟢 Anwesend | 🟡 Abmeldung in Kürze | 🔴 Abwesend (LOA)")
+            st.info("💡 **Legende:** 🟢 Anwesend | 🟡 Abmeldung in Kürze | 🔴 Abwesend")
         else:
             st.info("Lade Team-Daten...")
 
