@@ -228,12 +228,16 @@ with tab_admin:
                     st.subheader("🏆 Top Supporter (Gesamt)")
                     
                     if 'Ersteller' in df_berichte.columns:
+                        # 1. Zählen
                         supporter_counts = df_berichte['Ersteller'].value_counts().reset_index()
                         supporter_counts.columns = ['Ersteller', 'Anzahl']
-                        top_supporter = supporter_counts.head(10)
+                        
+                        # 2. Sortieren: Höchster Wert nach oben (ascending=True für horizontales Chart)
+                        # Hinweis: Streamlit zeichnet von unten nach oben, wenn horizontal=True.
+                        # Falls der Größte unten landet, ändere ascending auf False.
+                        top_supporter = supporter_counts.head(10).sort_values('Anzahl', ascending=True)
                         
                         if not top_supporter.empty:
-                            # HIER DIE KORREKTUR: horizontal=True macht daraus ein Balkendiagramm
                             st.bar_chart(
                                 top_supporter.set_index('Ersteller'), 
                                 color="#2ecc71", 
