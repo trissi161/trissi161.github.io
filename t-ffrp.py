@@ -228,25 +228,29 @@ with tab_admin:
                     st.subheader("🏆 Top Supporter (Gesamt)")
                     
                     if 'Ersteller' in df_berichte.columns:
-                        # 1. Zählen
+                        # 1. Zählen und Spalten benennen
                         supporter_counts = df_berichte['Ersteller'].value_counts().reset_index()
                         supporter_counts.columns = ['Ersteller', 'Anzahl']
-                        top_supporter = supporter_counts.head(10).sort_values(by='Anzahl', ascending=True)
+                        
+                        # 2. Die Top 10 nehmen und nach Anzahl sortieren
+                        # Wir sortieren hier ABSTEIGEND (False), damit der Höchste Wert 
+                        # im Datensatz oben steht.
+                        top_supporter = supporter_counts.head(10).sort_values(by='Anzahl', ascending=False)
                         
                         if not top_supporter.empty:
-                            st.bar_chart(
-                                top_supporter.set_index('Ersteller'), 
-                                color="#2ecc71", 
-                                horizontal=True
-                            )
+                            # TRICK: Wir nutzen st.bar_chart, definieren aber x und y explizit.
+                            # Falls dein Streamlit zu alt ist für x/y Parameter, 
+                            # nutzen wir den sichersten Weg über Altair:
+                            import altair as alt
+                            
+                            chart = alt.Chart(top_supporter).mark_bar(color="#2ecc71").encode(
+                                x=alt.X('Anzahl:Q', title='Anzahl Berichte'),
+                                y=alt.Y('Ersteller:N', sort='-x', title='Supporter'), # sort='-x' erzwingt Sortierung nach Wert
+                            ).properties(height=300)
+                            
+                            st.altair_chart(chart, use_container_width=True)
                     else:
                         st.error(f"Spalte 'Ersteller' nicht gefunden!")
-            else:
-                st.info("Noch keine Berichts-Daten vorhanden.")
-            
-            st.divider()
-            st.subheader("📋 Letzte Support-Berichte")
-            st.dataframe(load_data(URL_B).iloc[::-1], use_container_width=True, height=250)
 
         with admin_sub2:
             st.subheader("Offene Abmeldungsanträge")
