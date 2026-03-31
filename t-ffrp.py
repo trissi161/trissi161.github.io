@@ -199,18 +199,16 @@ with tab_admin:
             
             st.divider()
             
-            # --- Statistiken mit korrekten Spaltennamen ---
+            # --- Statistiken ---
             df_berichte = load_data(URL_B)
             
             if not df_berichte.empty:
-                # Sicherstellen, dass keine versteckten Leerzeichen stören
                 df_berichte.columns = df_berichte.columns.str.strip()
                 
                 col_chart1, col_chart2 = st.columns(2)
                 
                 with col_chart1:
                     st.subheader("📈 Berichte (14 Tage)")
-                    # Wir nutzen 'Zeitpunkt' (oder die erste Spalte, falls anders benannt)
                     time_col = 'Zeitpunkt' if 'Zeitpunkt' in df_berichte.columns else df_berichte.columns[0]
                     
                     df_stats_time = df_berichte.copy()
@@ -220,37 +218,36 @@ with tab_admin:
                     daily_counts = df_stats_time.groupby('Datum').size().reset_index(name='Berichte')
                     
                     if not daily_counts.empty:
+                        # Datum als String für saubere Abstände im Line Chart
+                        daily_counts['Datum'] = daily_counts['Datum'].astype(str)
                         st.line_chart(daily_counts.set_index('Datum'), color="#ff4b4b")
                     else:
                         st.info("Keine Daten für diesen Zeitraum.")
 
                 with col_chart2:
                     st.subheader("🏆 Top Supporter (Gesamt)")
-                    
                     if 'Ersteller' in df_berichte.columns:
-                        # 1. Zählen und Spalten benennen
                         supporter_counts = df_berichte['Ersteller'].value_counts().reset_index()
                         supporter_counts.columns = ['Ersteller', 'Anzahl']
-                        
-                        # 2. Die Top 10 nehmen und nach Anzahl sortieren
-                        # Wir sortieren hier ABSTEIGEND (False), damit der Höchste Wert 
-                        # im Datensatz oben steht.
                         top_supporter = supporter_counts.head(10).sort_values(by='Anzahl', ascending=False)
                         
                         if not top_supporter.empty:
-                            # TRICK: Wir nutzen st.bar_chart, definieren aber x und y explizit.
-                            # Falls dein Streamlit zu alt ist für x/y Parameter, 
-                            # nutzen wir den sichersten Weg über Altair:
                             import altair as alt
-                            
+                            # Chart mit Sortierung nach Wert (-x) und Achsenformat 'd' für Ganzzahlen
                             chart = alt.Chart(top_supporter).mark_bar(color="#2ecc71").encode(
                                 x=alt.X('Anzahl:Q', title='Anzahl Berichte', axis=alt.Axis(format='d')),
-                                y=alt.Y('Ersteller:N', sort='-x', title='Supporter'), # sort='-x' erzwingt Sortierung nach Wert
+                                y=alt.Y('Ersteller:N', sort='-x', title='Supporter'),
                             ).properties(height=300)
-                            
                             st.altair_chart(chart, use_container_width=True)
                     else:
-                        st.error(f"Spalte 'Ersteller' nicht gefunden!")
+                        st.error("Spalte 'Ersteller' nicht gefunden!")
+            
+                st.divider()
+                st.subheader("📋 Letzte Support-Berichte")
+                # Hier ist die Tabelle wieder! iloc[::-1] dreht sie um, damit die neuesten oben stehen.
+                st.dataframe(df_berichte.iloc[::-1], use_container_width=True, height=400, hide_index=True)
+            else:
+                st.info("Noch keine Berichts-Daten vorhanden.")
 
         with admin_sub2:
             st.subheader("Offene Abmeldungsanträge")
