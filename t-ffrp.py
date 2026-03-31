@@ -3,7 +3,8 @@ import pandas as pd
 import requests
 import json
 from datetime import datetime, timedelta
-import time  # WICHTIG: Dieser Import hat gefehlt!
+import time 
+import pytz
 
 # --- KONFIGURATION ---
 st.set_page_config(page_title="FF Team-Panel", page_icon="👾", layout="wide")
@@ -111,10 +112,6 @@ with tab_bericht:
             with c1:
                 name = st.selectbox("Dein Name", team_liste, key="sb_name")
                 spieler = st.text_input("Spieler (Discord Username)")
-                
-                # --- NEU: Multiselect statt Textarea ---
-                # Wir filtern deinen eigenen Namen aus der Liste, 
-                # damit man sich nicht selbst als "beteiligt" einträgt.
                 andere_teamler = [t for t in team_liste if t != name]
                 beteiligte = st.multiselect(
                     "Andere beteiligte Teamler", 
@@ -130,15 +127,13 @@ with tab_bericht:
             clips = st.text_area("Beweise (Clips / Zeugen / Bilder)")
             
             if st.form_submit_button("Bericht absenden"):
-                # WICHTIG: Da 'beteiligte' jetzt eine Liste ist (z.B. ["Trissi", "Max"]),
-                # müssen wir sie für Google Sheets in einen Text umwandeln:
                 beteiligte_text = ", ".join(beteiligte) if beteiligte else "Keine"
                 
                 row_data = [
-                    datetime.now().strftime("%d.%m.%Y %H:%M"), 
+                    berlin_tz = pytz.timezone("Europe/Berlin") jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), 
                     name, 
                     spieler, 
-                    beteiligte_text, # Hier wird jetzt der saubere Text gespeichert
+                    beteiligte_text, 
                     problem, 
                     massnahmen, 
                     begruendung, 
@@ -165,7 +160,7 @@ with tab_bericht:
             a_zusatz = st.text_input("Zusatz (z.B. Erreichbarkeit via DC)")
             
             if st.form_submit_button("Abmeldung absenden"):
-                loa_row = [datetime.now().strftime("%d.%m.%Y %H:%M"), a_name, a_grund, str(a_von), str(a_bis), a_zusatz, "Offen"]
+                loa_row = [berlin_tz = pytz.timezone("Europe/Berlin") jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), a_name, a_grund, str(a_von), str(a_bis), a_zusatz, "Offen"]
                 requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "A", "row": loa_row}))
                 st.success("✅ Abmeldung eingereicht!")
 
@@ -218,7 +213,6 @@ with tab_admin:
                     daily_counts = df_stats_time.groupby('Datum').size().reset_index(name='Berichte')
                     
                     if not daily_counts.empty:
-                        # Datum als String für saubere Abstände im Line Chart
                         daily_counts['Datum'] = daily_counts['Datum'].astype(str)
                         st.line_chart(daily_counts.set_index('Datum'), color="#ff4b4b")
                     else:
@@ -233,7 +227,6 @@ with tab_admin:
                         
                         if not top_supporter.empty:
                             import altair as alt
-                            # Chart mit Sortierung nach Wert (-x) und Achsenformat 'd' für Ganzzahlen
                             chart = alt.Chart(top_supporter).mark_bar(color="#2ecc71").encode(
                                 x=alt.X('Anzahl:Q', title='Anzahl Berichte', axis=alt.Axis(format='d')),
                                 y=alt.Y('Ersteller:N', sort='-x', title='Supporter'),
@@ -294,12 +287,10 @@ with tab_admin:
                 v_grund = st.text_area("Grund")
                 v_issuer = st.selectbox("Von", team_liste)
                 if st.form_submit_button("Senden"):
-                    v_row = [datetime.now().strftime("%d.%m.%Y %H:%M"), v_target, v_grund, v_issuer]
+                    v_row = [berlin_tz = pytz.timezone("Europe/Berlin") jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), v_target, v_grund, v_issuer]
                     requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "V", "row": v_row}))
                     
-                    # Personal-Datenblatt lokal aktualisieren (Zähler +1)
                     df_p_new = df_personal.copy()
-                    # Sicherstellen, dass Verwarnungen als Zahl vorliegen
                     df_p_new['Verwarnungen'] = pd.to_numeric(df_p_new['Verwarnungen'], errors='coerce').fillna(0)
                     df_p_new.loc[df_p_new['Name'] == v_target, 'Verwarnungen'] += 1
                     
@@ -315,9 +306,7 @@ with tab_admin:
             df_verwarnungen = load_data(URL_V)
             
             if not df_verwarnungen.empty:
-                # Spaltennamen säubern
                 df_verwarnungen.columns = df_verwarnungen.columns.str.strip()
-                # Neueste Verwarnungen zuerst anzeigen
                 st.dataframe(
                     df_verwarnungen.iloc[::-1], 
                     use_container_width=True, 
@@ -349,7 +338,6 @@ with tab_admin:
 
             # 2. Das Formular für die restlichen Daten
             with st.form("derank_form", clear_on_submit=True):
-                # Mögliche neue Ränge (alle außer der aktuelle)
                 alle_raenge = list(RANG_CONFIG.keys())
                 d_new_rank = st.selectbox("Neuer Rang", alle_raenge)
                 
@@ -360,7 +348,7 @@ with tab_admin:
                     if d_target and d_grund and d_new_rank != aktueller_rang:
                         # Protokoll-Eintrag für Blatt 'D'
                         derank_log = [
-                            datetime.now().strftime("%d.%m.%Y %H:%M"),
+                            berlin_tz = pytz.timezone("Europe/Berlin") jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"),
                             d_target,
                             aktueller_rang,
                             d_new_rank,
