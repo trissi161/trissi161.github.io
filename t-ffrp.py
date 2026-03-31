@@ -228,13 +228,9 @@ with tab_admin:
                     st.subheader("🏆 Top Supporter (Gesamt)")
                     
                     if 'Ersteller' in df_berichte.columns:
-                        # 1. Alle Namen zählen (erzeugt Series mit Name als Index und Count als Wert)
+                        # 1. Zählen
                         supporter_counts = df_berichte['Ersteller'].value_counts().reset_index()
                         supporter_counts.columns = ['Ersteller', 'Anzahl']
-                        
-                        # 2. Explizit sortieren: 
-                        # Für ein horizontales Chart in Streamlit (Top-Wert oben):
-                        # Wir nehmen die Top 10 und sortieren sie aufsteigend für die Logik der Grafik-Achse
                         top_supporter = supporter_counts.head(10).sort_values(by='Anzahl', ascending=True)
                         
                         if not top_supporter.empty:
