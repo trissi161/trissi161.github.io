@@ -188,17 +188,44 @@ with tab_admin:
     if pw == "2504":
         admin_sub1, admin_sub2, admin_sub3, admin_sub4, admin_sub5 = st.tabs(["📊 Team-Übersicht", "✅ Abmeldungen prüfen", "⚠️ Verwarnungen", "🛠 Bearbeitungs-Modus", "🔃 Rangänderungen"])
         
-        with admin_sub1:
+    with admin_sub1:
             st.subheader("Aktueller Team-Status")
             if not df_personal.empty:
                 df_p_sort = df_personal.copy()
                 df_p_sort['Sort'] = df_p_sort['Rang'].map(lambda x: RANG_CONFIG.get(x, {}).get('order', 99))
                 df_p_sort = df_p_sort.sort_values('Sort').drop(columns=['Sort'])
-                st.dataframe(style_team_table(df_p_sort, df_abmeldungen), use_container_width=True, height=450)
-                st.caption("🟢 Anwesend | 🟡 Bald abwesend | 🔴 Abwesend")
+                st.dataframe(style_team_table(df_p_sort, df_abmeldungen), use_container_width=True, height=400, hide_index=True)
+                st.caption("🟢 Anwesend | 🟡 Bald weg | 🔴 Abwesend")
+            
             st.divider()
-            st.subheader("Letzte Support-Berichte")
-            st.dataframe(load_data(URL_B).iloc[::-1], use_container_width=True)
+            
+            # --- NEU: Statistik direkt in der Übersicht ---
+            st.subheader("📈 Berichts-Aktivität (Letzte 14 Tage)")
+            df_berichte = load_data(URL_B)
+            
+            if not df_berichte.empty:
+                # Datum aufbereiten
+                df_stats = df_berichte.copy()
+                df_stats['Datum'] = pd.to_datetime(df_stats['Zeitpunkt'], dayfirst=True).dt.date
+                
+                # Nur die letzten 14 Tage für die Übersicht
+                heute = datetime.now().date()
+                vor_zwei_wochen = heute - timedelta(days=14)
+                df_stats = df_stats[df_stats['Datum'] >= vor_zwei_wochen]
+                
+                # Zählen pro Tag
+                daily_counts = df_stats.groupby('Datum').size().reset_index(name='Berichte')
+                daily_counts = daily_counts.sort_values('Datum')
+                
+                # Chart anzeigen
+                if not daily_counts.empty:
+                    st.line_chart(daily_counts.set_index('Datum'), color="#ff4b4b")
+                else:
+                    st.info("In den letzten 14 Tagen wurden keine Berichte eingereicht.")
+            
+            st.divider()
+            st.subheader("📋 Letzte Support-Berichte")
+            st.dataframe(load_data(URL_B).iloc[::-1], use_container_width=True, height=300)
 
         with admin_sub2:
             st.subheader("Offene Abmeldungsanträge")
