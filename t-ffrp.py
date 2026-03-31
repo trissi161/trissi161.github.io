@@ -199,16 +199,22 @@ with tab_admin:
             
             st.divider()
             
-            # --- NEU: Statistiken in zwei Spalten ---
+            # --- Statistiken mit korrekten Spaltennamen ---
             df_berichte = load_data(URL_B)
             
             if not df_berichte.empty:
+                # Sicherstellen, dass keine versteckten Leerzeichen stören
+                df_berichte.columns = df_berichte.columns.str.strip()
+                
                 col_chart1, col_chart2 = st.columns(2)
                 
                 with col_chart1:
                     st.subheader("📈 Berichte (14 Tage)")
+                    # Wir nutzen 'Zeitpunkt' (oder die erste Spalte, falls anders benannt)
+                    time_col = 'Zeitpunkt' if 'Zeitpunkt' in df_berichte.columns else df_berichte.columns[0]
+                    
                     df_stats_time = df_berichte.copy()
-                    df_stats_time['Datum'] = pd.to_datetime(df_stats_time['Zeitpunkt'], dayfirst=True).dt.date
+                    df_stats_time['Datum'] = pd.to_datetime(df_stats_time[time_col], dayfirst=True).dt.date
                     vor_14_tagen = datetime.now().date() - timedelta(days=14)
                     df_stats_time = df_stats_time[df_stats_time['Datum'] >= vor_14_tagen]
                     daily_counts = df_stats_time.groupby('Datum').size().reset_index(name='Berichte')
@@ -216,23 +222,24 @@ with tab_admin:
                     if not daily_counts.empty:
                         st.line_chart(daily_counts.set_index('Datum'), color="#ff4b4b")
                     else:
-                        st.info("Keine Daten für Zeitraum.")
+                        st.info("Keine Daten für diesen Zeitraum.")
 
                 with col_chart2:
                     st.subheader("🏆 Top Supporter (Gesamt)")
-                    # Zählen wie oft jeder Name in der Spalte 'Name' vorkommt
-                    supporter_counts = df_berichte['Name'].value_counts().reset_index()
-                    supporter_counts.columns = ['Name', 'Anzahl']
                     
-                    # Die Top 10 anzeigen
-                    top_supporter = supporter_counts.head(10)
-                    
-                    if not top_supporter.empty:
-                        st.bar_chart(top_supporter.set_index('Name'), color="#2ecc71")
+                    # HIER DIE KORREKTUR: Wir nutzen 'Ersteller' statt 'Name'
+                    if 'Ersteller' in df_berichte.columns:
+                        supporter_counts = df_berichte['Ersteller'].value_counts().reset_index()
+                        supporter_counts.columns = ['Ersteller', 'Anzahl']
+                        
+                        top_supporter = supporter_counts.head(10)
+                        
+                        if not top_supporter.empty:
+                            st.bar_chart(top_supporter.set_index('Ersteller'), color="#2ecc71")
                     else:
-                        st.info("Keine Berichte gefunden.")
+                        st.error(f"Spalte 'Ersteller' nicht gefunden! Vorhanden: {list(df_berichte.columns)}")
             else:
-                st.info("Noch keine Berichts-Daten für Statistiken verfügbar.")
+                st.info("Noch keine Berichts-Daten vorhanden.")
             
             st.divider()
             st.subheader("📋 Letzte Support-Berichte")
