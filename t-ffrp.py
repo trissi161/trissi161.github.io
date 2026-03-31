@@ -194,38 +194,49 @@ with tab_admin:
                 df_p_sort = df_personal.copy()
                 df_p_sort['Sort'] = df_p_sort['Rang'].map(lambda x: RANG_CONFIG.get(x, {}).get('order', 99))
                 df_p_sort = df_p_sort.sort_values('Sort').drop(columns=['Sort'])
-                st.dataframe(style_team_table(df_p_sort, df_abmeldungen), use_container_width=True, height=400, hide_index=True)
+                st.dataframe(style_team_table(df_p_sort, df_abmeldungen), use_container_width=True, height=350, hide_index=True)
                 st.caption("🟢 Anwesend | 🟡 Bald weg | 🔴 Abwesend")
             
             st.divider()
             
-            # --- NEU: Statistik direkt in der Übersicht ---
-            st.subheader("📈 Berichts-Aktivität (Letzte 14 Tage)")
+            # --- NEU: Statistiken in zwei Spalten ---
             df_berichte = load_data(URL_B)
             
             if not df_berichte.empty:
-                # Datum aufbereiten
-                df_stats = df_berichte.copy()
-                df_stats['Datum'] = pd.to_datetime(df_stats['Zeitpunkt'], dayfirst=True).dt.date
+                col_chart1, col_chart2 = st.columns(2)
                 
-                # Nur die letzten 14 Tage für die Übersicht
-                heute = datetime.now().date()
-                vor_zwei_wochen = heute - timedelta(days=14)
-                df_stats = df_stats[df_stats['Datum'] >= vor_zwei_wochen]
-                
-                # Zählen pro Tag
-                daily_counts = df_stats.groupby('Datum').size().reset_index(name='Berichte')
-                daily_counts = daily_counts.sort_values('Datum')
-                
-                # Chart anzeigen
-                if not daily_counts.empty:
-                    st.line_chart(daily_counts.set_index('Datum'), color="#ff4b4b")
-                else:
-                    st.info("In den letzten 14 Tagen wurden keine Berichte eingereicht.")
+                with col_chart1:
+                    st.subheader("📈 Berichte (14 Tage)")
+                    df_stats_time = df_berichte.copy()
+                    df_stats_time['Datum'] = pd.to_datetime(df_stats_time['Zeitpunkt'], dayfirst=True).dt.date
+                    vor_14_tagen = datetime.now().date() - timedelta(days=14)
+                    df_stats_time = df_stats_time[df_stats_time['Datum'] >= vor_14_tagen]
+                    daily_counts = df_stats_time.groupby('Datum').size().reset_index(name='Berichte')
+                    
+                    if not daily_counts.empty:
+                        st.line_chart(daily_counts.set_index('Datum'), color="#ff4b4b")
+                    else:
+                        st.info("Keine Daten für Zeitraum.")
+
+                with col_chart2:
+                    st.subheader("🏆 Top Supporter (Gesamt)")
+                    # Zählen wie oft jeder Name in der Spalte 'Name' vorkommt
+                    supporter_counts = df_berichte['Name'].value_counts().reset_index()
+                    supporter_counts.columns = ['Name', 'Anzahl']
+                    
+                    # Die Top 10 anzeigen
+                    top_supporter = supporter_counts.head(10)
+                    
+                    if not top_supporter.empty:
+                        st.bar_chart(top_supporter.set_index('Name'), color="#2ecc71")
+                    else:
+                        st.info("Keine Berichte gefunden.")
+            else:
+                st.info("Noch keine Berichts-Daten für Statistiken verfügbar.")
             
             st.divider()
             st.subheader("📋 Letzte Support-Berichte")
-            st.dataframe(load_data(URL_B).iloc[::-1], use_container_width=True, height=300)
+            st.dataframe(load_data(URL_B).iloc[::-1], use_container_width=True, height=250)
 
         with admin_sub2:
             st.subheader("Offene Abmeldungsanträge")
