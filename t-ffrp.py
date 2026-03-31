@@ -289,7 +289,8 @@ with tab_admin:
                 v_grund = st.text_area("Grund")
                 v_issuer = st.selectbox("Von", team_liste)
                 if st.form_submit_button("Senden"):
-                    v_row = [berlin_tz = pytz.timezone("Europe/Berlin") jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), v_target, v_grund, v_issuer]
+                    v_row = [berlin_tz = pytz.timezone("Europe/Berlin") 
+                    jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), v_target, v_grund, v_issuer]
                     requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "V", "row": v_row}))
                     
                     df_p_new = df_personal.copy()
@@ -350,7 +351,8 @@ with tab_admin:
                     if d_target and d_grund and d_new_rank != aktueller_rang:
                         # Protokoll-Eintrag für Blatt 'D'
                         derank_log = [
-                            berlin_tz = pytz.timezone("Europe/Berlin") jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"),
+                            berlin_tz = pytz.timezone("Europe/Berlin") 
+                            jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"),
                             d_target,
                             aktueller_rang,
                             d_new_rank,
