@@ -244,7 +244,7 @@ with tab_admin:
                             import altair as alt
                             
                             chart = alt.Chart(top_supporter).mark_bar(color="#2ecc71").encode(
-                                x=alt.X('Anzahl:Q', title='Anzahl Berichte'),
+                                x=alt.X('Anzahl:Q', title='Anzahl Berichte', axis=alt.Axis(format='d')),
                                 y=alt.Y('Ersteller:N', sort='-x', title='Supporter'), # sort='-x' erzwingt Sortierung nach Wert
                             ).properties(height=300)
                             
