@@ -188,7 +188,7 @@ with tab_admin:
     if pw == "2504":
         admin_sub1, admin_sub2, admin_sub3, admin_sub4, admin_sub5 = st.tabs(["📊 Team-Übersicht", "✅ Abmeldungen prüfen", "⚠️ Verwarnungen", "🛠 Bearbeitungs-Modus", "🔃 Rangänderungen"])
         
-    with admin_sub1:
+        with admin_sub1:
             st.subheader("Aktueller Team-Status")
             if not df_personal.empty:
                 df_p_sort = df_personal.copy()
