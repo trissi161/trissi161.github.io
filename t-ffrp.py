@@ -111,16 +111,48 @@ with tab_bericht:
             with c1:
                 name = st.selectbox("Dein Name", team_liste, key="sb_name")
                 spieler = st.text_input("Spieler (Discord Username)")
-                beteiligte = st.text_area("Andere beteiligte Teamler")
+                
+                # --- NEU: Multiselect statt Textarea ---
+                # Wir filtern deinen eigenen Namen aus der Liste, 
+                # damit man sich nicht selbst als "beteiligt" einträgt.
+                andere_teamler = [t for t in team_liste if t != name]
+                beteiligte = st.multiselect(
+                    "Andere beteiligte Teamler", 
+                    options=andere_teamler,
+                    help="Wähle alle Teammitglieder aus, die dabei waren."
+                )
+                
             with c2:
                 problem = st.text_area("Problem")
                 massnahmen = st.text_area("Maßnahmen")
                 begruendung = st.text_area("Begründung")
+            
             clips = st.text_area("Beweise (Clips / Zeugen / Bilder)")
+            
             if st.form_submit_button("Bericht absenden"):
-                row_data = [datetime.now().strftime("%d.%m.%Y %H:%M"), name, spieler, beteiligte, problem, massnahmen, begruendung, clips]
-                requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "B", "row": row_data}))
-                st.success("✅ Bericht gespeichert!")
+                # WICHTIG: Da 'beteiligte' jetzt eine Liste ist (z.B. ["Trissi", "Max"]),
+                # müssen wir sie für Google Sheets in einen Text umwandeln:
+                beteiligte_text = ", ".join(beteiligte) if beteiligte else "Keine"
+                
+                row_data = [
+                    datetime.now().strftime("%d.%m.%Y %H:%M"), 
+                    name, 
+                    spieler, 
+                    beteiligte_text, # Hier wird jetzt der saubere Text gespeichert
+                    problem, 
+                    massnahmen, 
+                    begruendung, 
+                    clips
+                ]
+                
+                try:
+                    res = requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "B", "row": row_data}))
+                    if res.status_code == 200:
+                        st.success("✅ Bericht gespeichert!")
+                    else:
+                        st.error("Fehler beim Senden.")
+                except Exception as e:
+                    st.error(f"Verbindung fehlgeschlagen: {e}")
 
     with sub_tab2:
         st.header("Abmeldung beantragen")
