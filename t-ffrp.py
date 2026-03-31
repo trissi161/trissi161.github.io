@@ -296,11 +296,35 @@ with tab_admin:
                 if st.form_submit_button("Senden"):
                     v_row = [datetime.now().strftime("%d.%m.%Y %H:%M"), v_target, v_grund, v_issuer]
                     requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "V", "row": v_row}))
+                    
+                    # Personal-Datenblatt lokal aktualisieren (Zähler +1)
                     df_p_new = df_personal.copy()
+                    # Sicherstellen, dass Verwarnungen als Zahl vorliegen
+                    df_p_new['Verwarnungen'] = pd.to_numeric(df_p_new['Verwarnungen'], errors='coerce').fillna(0)
                     df_p_new.loc[df_p_new['Name'] == v_target, 'Verwarnungen'] += 1
+                    
                     requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "P", "action": "update_all", "headers": df_p_new.columns.tolist(), "rows": df_p_new.values.tolist()}))
-                    st.success("Erledigt!")
+                    st.success(f"✅ Verwarnung für {v_target} wurde registriert!")
+                    time.sleep(1)
                     st.rerun()
+
+            st.divider()
+            st.subheader("📜 Historie der Verwarnungen")
+            
+            # Daten aus Blatt V laden
+            df_verwarnungen = load_data(URL_V)
+            
+            if not df_verwarnungen.empty:
+                # Spaltennamen säubern
+                df_verwarnungen.columns = df_verwarnungen.columns.str.strip()
+                # Neueste Verwarnungen zuerst anzeigen
+                st.dataframe(
+                    df_verwarnungen.iloc[::-1], 
+                    use_container_width=True, 
+                    hide_index=True
+                )
+            else:
+                st.info("Bisher wurden keine Verwarnungen ausgesprochen.")
 
         with admin_sub4:
             st.subheader("Datenbank-Editor")
