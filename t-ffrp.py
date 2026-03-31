@@ -130,7 +130,8 @@ with tab_bericht:
                 beteiligte_text = ", ".join(beteiligte) if beteiligte else "Keine"
                 
                 row_data = [
-                    berlin_tz = pytz.timezone("Europe/Berlin") jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), 
+                    berlin_tz = pytz.timezone("Europe/Berlin") 
+                    jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), 
                     name, 
                     spieler, 
                     beteiligte_text, 
@@ -160,7 +161,8 @@ with tab_bericht:
             a_zusatz = st.text_input("Zusatz (z.B. Erreichbarkeit via DC)")
             
             if st.form_submit_button("Abmeldung absenden"):
-                loa_row = [berlin_tz = pytz.timezone("Europe/Berlin") jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), a_name, a_grund, str(a_von), str(a_bis), a_zusatz, "Offen"]
+                loa_row = [berlin_tz = pytz.timezone("Europe/Berlin")    
+                jetzt_berlin = datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), a_name, a_grund, str(a_von), str(a_bis), a_zusatz, "Offen"]
                 requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "A", "row": loa_row}))
                 st.success("✅ Abmeldung eingereicht!")
 
