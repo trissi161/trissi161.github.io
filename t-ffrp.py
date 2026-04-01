@@ -210,14 +210,30 @@ with tab_admin:
                     time_col = 'Zeitpunkt' if 'Zeitpunkt' in df_berichte.columns else df_berichte.columns[0]
                     
                     df_stats_time = df_berichte.copy()
+                    # Datum korrekt umwandeln
                     df_stats_time['Datum'] = pd.to_datetime(df_stats_time[time_col], dayfirst=True).dt.date
-                    vor_14_tagen = datetime.now().date() - timedelta(days=14)
-                    df_stats_time = df_stats_time[df_stats_time['Datum'] >= vor_14_tagen]
-                    daily_counts = df_stats_time.groupby('Datum').size().reset_index(name='Berichte')
                     
-                    if not daily_counts.empty:
-                        daily_counts['Datum'] = daily_counts['Datum'].astype(str)
-                        st.line_chart(daily_counts.set_index('Datum'), color="#ff4b4b")
+                    # 1. Zeitraum festlegen (Heute bis vor 14 Tagen)
+                    heute = datetime.now(berlin_tz).date()
+                    vor_14_tagen = heute - timedelta(days=14)
+                    
+                    # 2. Einen kompletten Datums-Index erstellen (jeder Tag ist dabei)
+                    alle_tage = pd.date_range(start=vor_14_tagen, end=heute).date
+                    df_leer = pd.DataFrame({'Datum': alle_tage, 'Berichte': 0})
+                    
+                    # 3. Echte Daten zählen
+                    df_counts = df_stats_time[df_stats_time['Datum'] >= vor_14_tagen]
+                    daily_counts = df_counts.groupby('Datum').size().reset_index(name='Berichte_Echt')
+                    
+                    # 4. Mergen: Die leere Liste mit den echten Daten füllen
+                    df_final = pd.merge(df_leer, daily_counts, on='Datum', how='left')
+                    # Berichte_Echt nutzen, falls vorhanden, sonst 0
+                    df_final['Berichte'] = df_final['Berichte_Echt'].fillna(0).astype(int)
+                    
+                    if not df_final.empty:
+                        # Datum für die Anzeige schön machen
+                        df_final['Datum_Str'] = df_final['Datum'].apply(lambda x: x.strftime('%d.%m.'))
+                        st.line_chart(df_final.set_index('Datum_Str')['Berichte'], color="#ff4b4b")
                     else:
                         st.info("Keine Daten für diesen Zeitraum.")
 
