@@ -236,7 +236,8 @@ with tab_admin:
                         
                         line_chart = alt.Chart(df_final).mark_line(color="#ff4b4b", point=True).encode(
                             x=alt.X('Datum:T', title='Datum', axis=alt.Axis(format='%d.%m.', labelAngle=-45)),
-                            y=alt.Y('Berichte:Q', title='Anzahl', axis=alt.Axis(tickMinStep=1)),
+                            # tickMinStep=1 sorgt dafür, dass keine 0.5er Schritte kommen
+                            y=alt.Y('Berichte:Q', title='Anzahl', axis=alt.Axis(tickMinStep=1, format='d')),
                             tooltip=['Datum', 'Berichte']
                         ).properties(height=300)
                         
