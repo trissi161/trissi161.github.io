@@ -212,11 +212,11 @@ with tab_admin:
                     df_stats_time = df_berichte.copy()
                     df_stats_time['Datum'] = pd.to_datetime(df_stats_time[time_col], dayfirst=True).dt.date
                     
-                    # 1. Zeitraum festlegen
+                    # 1. Zeitraum festlegen (mit Berlin-Zeit)
                     heute = datetime.now(berlin_tz).date()
                     vor_14_tagen = heute - timedelta(days=14)
                     
-                    # 2. Vollständigen Datums-Bereich erstellen
+                    # 2. Vollständigen Bereich erstellen
                     alle_tage = pd.date_range(start=vor_14_tagen, end=heute).date
                     df_final = pd.DataFrame({'Datum': alle_tage})
                     
@@ -224,19 +224,23 @@ with tab_admin:
                     df_counts = df_stats_time[df_stats_time['Datum'] >= vor_14_tagen]
                     daily_counts = df_counts.groupby('Datum').size().reset_index(name='Berichte')
                     
-                    # 4. Zusammenführen (Merge)
+                    # 4. Merge & Sortierung sicherstellen
                     df_final = pd.merge(df_final, daily_counts, on='Datum', how='left').fillna(0)
                     df_final['Berichte'] = df_final['Berichte'].astype(int)
+                    df_final = df_final.sort_values('Datum') # WICHTIG: Chronologisch sortieren
 
-                    # --- WICHTIG: Erst SORTIEREN, dann Formatieren ---
-                    df_final = df_final.sort_values('Datum') 
-                    
-                    # Hilfsspalte für die Anzeige (String-Format), damit die Sortierung erhalten bleibt
-                    df_final['Anzeige_Datum'] = df_final['Datum'].apply(lambda x: x.strftime('%d.%m.'))
-                    
                     if not df_final.empty:
-                        # Wir nutzen das formatierten Datum als Index für die Beschriftung
-                        st.line_chart(df_final.set_index('Anzeige_Datum')['Berichte'], color="#ff4b4b")
+                        # TRICK: Wir nutzen altair direkt für das Line-Chart. 
+                        # Das behält die zeitliche Sortierung bei, auch bei Monatswechseln.
+                        import altair as alt
+                        
+                        line_chart = alt.Chart(df_final).mark_line(color="#ff4b4b", point=True).encode(
+                            x=alt.X('Datum:T', title='Datum', axis=alt.Axis(format='%d.%m.', labelAngle=-45)),
+                            y=alt.Y('Berichte:Q', title='Anzahl', axis=alt.Axis(tickMinStep=1)),
+                            tooltip=['Datum', 'Berichte']
+                        ).properties(height=300)
+                        
+                        st.altair_chart(line_chart, use_container_width=True)
                     else:
                         st.info("Keine Daten für diesen Zeitraum.")
 
