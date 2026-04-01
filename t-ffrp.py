@@ -255,7 +255,8 @@ with tab_admin:
                         if not top_supporter.empty:
                             import altair as alt
                             chart = alt.Chart(top_supporter).mark_bar(color="#2ecc71").encode(
-                                x=alt.X('Anzahl:Q', title='Anzahl Berichte', axis=alt.Axis(format='d')),
+                                # Auch hier begrenzen wir die Ticks auf die echte Anzahl
+                                x=alt.X('Anzahl:Q', title='Anzahl Berichte', axis=alt.Axis(format='d', tickMinStep=1, tickCount=top_supporter['Anzahl'].max() + 1)),
                                 y=alt.Y('Ersteller:N', sort='-x', title='Supporter'),
                             ).properties(height=300)
                             st.altair_chart(chart, use_container_width=True)
