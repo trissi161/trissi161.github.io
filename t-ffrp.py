@@ -193,7 +193,7 @@ with tab_admin:
                 df_p_sort['Sort'] = df_p_sort['Rang'].map(lambda x: RANG_CONFIG.get(x, {}).get('order', 99))
                 df_p_sort = df_p_sort.sort_values('Sort').drop(columns=['Sort'])
                 st.dataframe(style_team_table(df_p_sort, df_abmeldungen), use_container_width=True, height=350, hide_index=True)
-                st.caption("🟢 Anwesend | 🟡 Bald weg | 🔴 Abwesend")
+                st.caption("🟢 Anwesend | 🟡 Bald abwesend | 🔴 Abwesend")
             
             st.divider()
             
@@ -212,31 +212,24 @@ with tab_admin:
                     df_stats_time = df_berichte.copy()
                     df_stats_time['Datum'] = pd.to_datetime(df_stats_time[time_col], dayfirst=True).dt.date
                     
-                    # 1. Zeitraum festlegen (mit Berlin-Zeit)
                     heute = datetime.now(berlin_tz).date()
                     vor_14_tagen = heute - timedelta(days=14)
                     
-                    # 2. Vollständigen Bereich erstellen
                     alle_tage = pd.date_range(start=vor_14_tagen, end=heute).date
                     df_final = pd.DataFrame({'Datum': alle_tage})
                     
-                    # 3. Echte Daten zählen
                     df_counts = df_stats_time[df_stats_time['Datum'] >= vor_14_tagen]
                     daily_counts = df_counts.groupby('Datum').size().reset_index(name='Berichte')
                     
-                    # 4. Merge & Sortierung sicherstellen
                     df_final = pd.merge(df_final, daily_counts, on='Datum', how='left').fillna(0)
                     df_final['Berichte'] = df_final['Berichte'].astype(int)
                     df_final = df_final.sort_values('Datum') # WICHTIG: Chronologisch sortieren
 
                     if not df_final.empty:
-                        # TRICK: Wir nutzen altair direkt für das Line-Chart. 
-                        # Das behält die zeitliche Sortierung bei, auch bei Monatswechseln.
                         import altair as alt
                         
                         line_chart = alt.Chart(df_final).mark_line(color="#ff4b4b", point=True).encode(
                             x=alt.X('Datum:T', title='Datum', axis=alt.Axis(format='%d.%m.', labelAngle=-45)),
-                            # tickCount steuert, wie viele Labels maximal angezeigt werden
                             y=alt.Y('Berichte:Q', title='Anzahl', axis=alt.Axis(tickMinStep=1, format='d', tickCount=df_final['Berichte'].max() + 1)),
                             tooltip=['Datum', 'Berichte']
                         ).properties(height=300)
@@ -255,7 +248,6 @@ with tab_admin:
                         if not top_supporter.empty:
                             import altair as alt
                             chart = alt.Chart(top_supporter).mark_bar(color="#2ecc71").encode(
-                                # Auch hier begrenzen wir die Ticks auf die echte Anzahl
                                 x=alt.X('Anzahl:Q', title='Anzahl Berichte', axis=alt.Axis(format='d', tickMinStep=1, tickCount=top_supporter['Anzahl'].max() + 1)),
                                 y=alt.Y('Ersteller:N', sort='-x', title='Supporter'),
                             ).properties(height=300)
@@ -265,7 +257,6 @@ with tab_admin:
             
                 st.divider()
                 st.subheader("📋 Letzte Support-Berichte")
-                # Hier ist die Tabelle wieder! iloc[::-1] dreht sie um, damit die neuesten oben stehen.
                 st.dataframe(df_berichte.iloc[::-1], use_container_width=True, height=400, hide_index=True)
             else:
                 st.info("Noch keine Berichts-Daten vorhanden.")
@@ -356,10 +347,8 @@ with tab_admin:
         with admin_sub5: 
             st.subheader("Team-Rang Änderung protokollieren")
 
-            # 1. Auswahl des Mitglieds (AUSSERHALB des Formulars für Live-Update)
             d_target = st.selectbox("Mitglied auswählen", team_liste, key="dr_target")
 
-            # Aktuellen Rang live aus den Daten ziehen
             if not df_personal.empty and d_target:
                 aktueller_rang = df_personal[df_personal['Name'] == d_target]['Rang'].values[0]
                 st.info(f"Aktueller Rang von **{d_target}**: `{aktueller_rang}`")
