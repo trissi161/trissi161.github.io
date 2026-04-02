@@ -10,12 +10,30 @@ berlin_tz = pytz.timezone("Europe/Berlin")
 # --- KONFIGURATION ---
 st.set_page_config(page_title="FF Team-Panel", page_icon="👾", layout="wide")
 
-# Custom CSS für Gaming-Look
+# Custom CSS für Gaming-Look & Light-Mode Fix
 st.markdown("""
     <style>
+    /* Haupt-App Hintergrund */
     .stApp { background-color: #0e1117; color: #ffffff; }
-    [data-testid="stMetricValue"] { font-size: 1.8rem; }
-    .stDataFrame { border: none !important; }
+    
+    /* Fix für Dataframes/Tabellen: Erzwingt dunklen Hintergrund auch im Light Mode */
+    [data-testid="stDataFrame"] {
+        background-color: #161b22 !important;
+        border: 1px solid #30363d !important;
+        border-radius: 5px;
+    }
+    
+    /* Schriftfarbe in Metriken und Tabellen fixieren */
+    [data-testid="stMetricValue"], .stDataFrame td, .stDataFrame th {
+        color: #ffffff !important;
+    }
+
+    /* Input Felder Styling */
+    .stTextInput input, .stTextArea textarea, .stSelectbox div {
+        background-color: #161b22 !important;
+        color: #ffffff !important;
+        border: 1px solid #30363d !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -128,7 +146,11 @@ with tab_bericht:
             clips = st.text_area("Beweise (Clips / Zeugen / Bilder)")
             
             if st.form_submit_button("Bericht absenden"):
-                beteiligte_text = ", ".join(beteiligte) if beteiligte else "Keine"
+                # VALIDIERUNG: Prüfen ob wichtige Felder leer sind
+                if not spieler or not problem or not massnahmen:
+                    st.error("⚠️ Bitte fülle mindestens 'Spieler', 'Problem' und 'Maßnahmen' aus!")
+                else:
+                    beteiligte_text = ", ".join(beteiligte) if beteiligte else "Keine"
                 
                 row_data = [
                     datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), 
@@ -161,6 +183,12 @@ with tab_bericht:
             a_zusatz = st.text_input("Zusatz (z.B. Erreichbarkeit via DC)")
             
             if st.form_submit_button("Abmeldung absenden"):
+                # VALIDIERUNG: Grund darf nicht leer sein
+                if not a_grund:
+                    st.error("⚠️ Bitte gib einen Grund für deine Abmeldung an!")
+                elif a_bis <= a_von:
+                    st.error("⚠️ Das 'Bis'-Datum muss nach dem 'Von'-Datum liegen!")
+                else:
                 loa_row = [
                     datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), 
                     a_name, a_grund, str(a_von), str(a_bis), a_zusatz, "Offen"]
