@@ -13,26 +13,28 @@ st.set_page_config(page_title="FF Team-Panel", page_icon="👾", layout="wide")
 # Custom CSS für Gaming-Look & Light-Mode Fix
 st.markdown("""
     <style>
-    /* Haupt-App Hintergrund */
-    .stApp { background-color: #0e1117; color: #ffffff; }
-    
-    /* Fix für Dataframes/Tabellen: Erzwingt dunklen Hintergrund auch im Light Mode */
+    /* Tabellen-Hintergrund anpassen */
     [data-testid="stDataFrame"] {
-        background-color: #161b22 !important;
-        border: 1px solid #30363d !important;
-        border-radius: 5px;
-    }
-    
-    /* Schriftfarbe in Metriken und Tabellen fixieren */
-    [data-testid="stMetricValue"], .stDataFrame td, .stDataFrame th {
-        color: #ffffff !important;
+        background-color: var(--background-color) !important;
+        border: 1px solid var(--secondary-background-color) !important;
     }
 
-    /* Input Felder Styling */
-    .stTextInput input, .stTextArea textarea, .stSelectbox div {
-        background-color: #161b22 !important;
-        color: #ffffff !important;
-        border: 1px solid #30363d !important;
+    /* Textfarbe in Tabellen und Metriken automatisch anpassen */
+    .stDataFrame td, .stDataFrame th, [data-testid="stMetricValue"] {
+        color: var(--text-color) !important;
+    }
+
+    /* Eingabefelder an das jeweilige Theme anpassen */
+    input, textarea, select {
+        background-color: var(--secondary-background-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid rgba(151, 151, 151, 0.2) !important;
+    }
+
+    /* Spezielle Anpassung für die Header im Light Mode */
+    thead tr th {
+        background-color: var(--secondary-background-color) !important;
+        color: var(--text-color) !important;
     }
     </style>
     """, unsafe_allow_html=True)
