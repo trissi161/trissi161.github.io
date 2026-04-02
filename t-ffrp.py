@@ -189,11 +189,11 @@ with tab_bericht:
                 elif a_bis <= a_von:
                     st.error("⚠️ Das 'Bis'-Datum muss nach dem 'Von'-Datum liegen!")
                 else:
-                loa_row = [
-                    datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), 
-                    a_name, a_grund, str(a_von), str(a_bis), a_zusatz, "Offen"]
-                requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "A", "row": loa_row}))
-                st.success("✅ Abmeldung eingereicht!")
+                    loa_row = [
+                        datetime.now(berlin_tz).strftime("%d.%m.%Y %H:%M"), 
+                        a_name, a_grund, str(a_von), str(a_bis), a_zusatz, "Offen"]
+                    requests.post(WEBHOOK_URL, data=json.dumps({"sheet": "A", "row": loa_row}))
+                    st.success("✅ Abmeldung eingereicht!")
 
         st.divider()
         st.subheader("📊 Aktuelle Team-Verfügbarkeit")
