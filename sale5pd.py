@@ -3,78 +3,69 @@ import streamlit as st
 # Grundkonfiguration
 st.set_page_config(page_title="SALE FvPD | San Andreas", page_icon="🚔", layout="wide")
 
-# Custom CSS für den Look (Schriftgrößen und Abstände)
-st.markdown("""
-    <style>
-    .main {
-        background-color: #0e1117;
-    }
-    .big-font {
-        font-size: 60px !important;
-        font-weight: 800;
-        line-height: 1.1;
-        margin-bottom: 20px;
-    }
-    .highlight {
-        color: #0047AB; /* Dein Polizei-Blau */
-    }
-    .status-card {
-        background-color: #1a1c24;
-        border-radius: 15px;
-        padding: 25px;
-        border: 1px solid #2d2f39;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# Navigation in der Sidebar
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Gehe zu:", ["Home", "Über uns", "Team"])
 
-# --- HERO SECTION ---
-col1, space, col2 = st.columns([1.2, 0.2, 1])
-
-with col1:
-    st.markdown('<p style="color: #0047AB; font-weight: bold;">● Season 1 – Jetzt Live</p>', unsafe_allow_html=True)
-    st.markdown('<div class="big-font">DEIN <span class="highlight">LAW ENFORCEMENT</span><br>NEXT LEVEL.</div>', unsafe_allow_html=True)
-    st.write(
-        "Erlebe San Andreas so realistisch wie nie zuvor. "
-        "High-Performance, spezialisierte Departments und eine "
-        "Community, die echtes Teamplay schätzt."
-    )
+# --- HOME PAGE ---
+if page == "Home":
+    col1, space, col2 = st.columns([1.2, 0.2, 1])
+    with col1:
+        st.markdown('<h1 style="font-size: 60px;">DEIN <span style="color: #0047AB;">LAW ENFORCEMENT</span><br>NEXT LEVEL.</h1>', unsafe_allow_html=True)
+        st.write("Willkommen auf der offiziellen Seite von San Andreas Law Enforcement.")
+        st.button("🚀 Jetzt Starten")
     
-    # Buttons nebeneinander
-    btn_col1, btn_col2 = st.columns([1, 1.5])
-    with btn_col1:
-        st.button("🚀 Jetzt Starten", use_container_width=True)
-    with btn_col2:
-        st.button("💬 Discord beitreten", use_container_width=True)
+    with col2:
+        st.info("Server-Status-Box (hier kommt dein Dashboard-Code rein)")
 
-with col2:
-    # Die Status-Box (ähnlich wie im Bild)
-    with st.container():
+# --- ÜBER UNS PAGE ---
+elif page == "Über uns":
+    st.title("📖 Über das Projekt")
+    
+    col_text, col_img = st.columns([2, 1])
+    with col_text:
         st.markdown("""
-        <div class="status-card">
-            <div style="display: flex; justify-content: space-between;">
-                <span style="font-weight: bold;">SALE FvPD</span>
-                <span style="color: #2ecc71;">● Online</span>
-            </div>
-            <p style="color: gray; font-size: 0.8em;">FiveM Roleplay · San Andreas</p>
-            <h1 style="margin-top: 20px; margin-bottom: 0;">14</h1>
-            <p style="color: gray;">Spieler aktiv</p>
-            <hr style="border-color: #2d2f39;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.9em;">
-                <div><strong>64</strong><br><span style="color: gray;">Max. Slots</span></div>
-                <div><strong>22ms</strong><br><span style="color: gray;">Latenz</span></div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        ### Unsere Vision
+        San Andreas Law Enforcement (SALE) wurde mit dem Ziel ins Leben gerufen, das realistischste 
+        Polizei-Roleplay in der FiveM-Szene zu bieten. Wir legen Wert auf:
+        
+        * **Qualität vor Quantität:** Jeder Officer durchläuft eine fundierte Ausbildung.
+        * **Technische Innovation:** Eigene Skripte für MDT, Funk und Interaktion.
+        * **Fairness:** Ein transparentes Regelwerk für alle Spieler.
+        
+        ### Das FvPD
+        Das *Fort Valley Police Department* ist unser Herzstück. Es repräsentiert eine moderne 
+        Polizeibehörde, die mit modernster Technik gegen die Kriminalität in San Andreas vorgeht.
+        """)
+    with col_img:
+        # Hier könntest du ein Bild von eurem PD oder ein Logo einfügen
+        st.image("https://via.placeholder.com/400x300.png?text=FvPD+Impressionen", caption="Unser Hauptquartier")
 
-# --- WEITERE FEATURES (Unterm Hero) ---
-st.write("---")
-feat1, feat2, feat3 = st.columns(3)
-with feat1:
-    st.subheader("🚔 Realismus")
-    st.write("Strenges Regelwerk für maximale Immersion.")
-with feat2:
-    st.subheader("🔧 Technik")
-    st.write("Eigene Scripts und optimierte Performance.")
-with feat3:
-    st.subheader("🤝 Community")
-    st.write("Ein faires Miteinander auf Augenhöhe.")
+# --- TEAM PAGE ---
+elif page == "Team":
+    st.title("👥 Das Team hinter SALE")
+    st.write("Die Administration und Leitung des Projekts.")
+    
+    # Beispiel für Team-Karten in Spalten
+    row1_col1, row1_col2, row1_col3 = st.columns(3)
+    
+    with row1_col1:
+        st.image("https://via.placeholder.com/150", width=150) # Platzhalter für Profilbild
+        st.subheader("Name 1")
+        st.caption("Projektleitung / Founder")
+        st.write("Zuständig für die technische Entwicklung und Vision.")
+
+    with row1_col2:
+        st.image("https://via.placeholder.com/150", width=150)
+        st.subheader("Name 2")
+        st.caption("Chief of Police")
+        st.write("Leitet das operative Geschäft des FvPD.")
+
+    with row1_col3:
+        st.image("https://via.placeholder.com/150", width=150)
+        st.subheader("Name 3")
+        st.caption("Community Management")
+        st.write("Ansprechpartner für Sorgen und Wünsche der Spieler.")
+
+    st.divider()
+    st.info("Du möchtest Teil des Teams werden? Schau im Discord vorbei!")
