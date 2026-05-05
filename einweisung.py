@@ -1,23 +1,36 @@
 import streamlit as st
 import requests
+from streamlit_gsheets import GSheetsConnection
+import pandas as pd
 
-# Konfiguration (Diese Werte später in Streamlit Secrets eintragen!)
+# Konfiguration aus Streamlit Secrets
 DISCORD_BOT_TOKEN = st.secrets["DISCORD_TOKEN"]
 GUILD_ID = st.secrets["GUILD_ID"]
 ROLE_ID = st.secrets["ROLE_ID"]
 
+# Seite einrichten
 st.set_page_config(page_title="PD Einweisung", page_icon="🚔")
 
-st.title("🚔 PD Einweisung & Onboarding")
-st.write("Bitte lies dir das folgende Dokument aufmerksam durch.")
+# Verbindung zu Google Sheets herstellen
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 1. Das Dokument in einer scrollbaren Box
+# 1. DATEN LADEN
+try:
+    df = conn.read()
+except Exception as e:
+    st.error(f"Verbindung zum Google Sheet fehlgeschlagen: {e}")
+    df = pd.DataFrame()
+
+st.title("🚔 PD Einweisung & Onboarding")
+
+# 2. DOKUMENT ANZEIGEN
+st.write("Bitte lies dir das folgende Dokument aufmerksam durch.")
 document_html = """
 <div style="height: 400px; overflow-y: scroll; padding: 15px; border: 1px solid #333; border-radius: 10px; background-color: #1e1e1e; color: #ffffff;">
     <h2>Dienstanweisung Police Department</h2>
     <p><strong>§1 Verhalten im Dienst:</strong> Jeder Beamte hat sich respektvoll zu verhalten...</p>
-    <p>... hier dein extrem langer Text für die Einweisung ...</p>
-    <p>... noch mehr Text ...</p>
+    <p>... hier dein ausführlicher Text für die Einweisung ...</p>
+    <p>Füge hier alle Regeln ein, die für deine Cops wichtig sind.</p>
     <hr>
     <p style='text-align: center;'>--- ENDE DES DOKUMENTS ---</p>
 </div>
@@ -26,79 +39,74 @@ st.markdown(document_html, unsafe_allow_html=True)
 
 st.divider()
 
-# 2. Identifizierung & Bestätigung
-discord_id = st.text_input("Deine Discord User-ID (Zahlenfolge):", placeholder="z.B. 123456789012345678")
-st.caption("Deine ID findest du in Discord unter 'Benutzereinstellungen > Erweitert > Entwicklermodus an' -> Rechtsklick auf dein Profil -> ID kopieren.")
+# 3. FORMULAR-BEREICH
+st.subheader("Persönliche Angaben & Dienstnummer")
 
+# Dienstnummer-Auswahl aus dem Sheet
+ausgewaehlte_nr = None
+if not df.empty and 'Dienstnummer' in df.columns and 'Name' in df.columns:
+    # Filter: Nur Nummern anzeigen, wo die Spalte 'Name' leer ist
+    freie_nummern = df[df['Name'].isna() | (df['Name'] == "")]['Dienstnummer'].tolist()
+    
+    if freie_nummern:
+        ausgewaehlte_nr = st.selectbox("Wähle eine freie Dienstnummer:", freie_nummern)
+    else:
+        st.warning("Momentan sind keine Dienstnummern frei! Kontaktiere einen Admin.")
+else:
+    st.error("Fehler: Das Google Sheet konnte nicht geladen werden oder die Spalten 'Dienstnummer'/'Name' fehlen.")
+
+# Namenseingabe für das Sheet
+name_eingabe = st.text_input("Dein Name (Vorname_Nachname):", placeholder="z.B. Max_Mustermann")
+
+# Discord ID Eingabe
+discord_id = st.text_input("Deine Discord User-ID (Zahlenfolge):", placeholder="z.B. 123456789012345678")
+st.caption("Rechtsklick auf dein Profil in Discord -> ID kopieren (Entwicklermodus muss an sein).")
+
+# Bestätigung
 confirm = st.checkbox("Ich bestätige, dass ich die Einweisung vollständig gelesen und verstanden habe.")
 
-# 3. Logik zur Rollenvergabe
-if st.button("Einweisung abschließen & Rolle erhalten", disabled=not confirm):
-    if not discord_id:
-        st.error("Bitte gib deine Discord-ID ein.")
+st.divider()
+
+# 4. ABSCHLUSS-LOGIK
+if st.button("Einweisung abschließen", disabled=not confirm):
+    if not discord_id or not name_eingabe or not ausgewaehlte_nr:
+        st.error("Bitte fülle alle Felder aus (Name, ID und Dienstnummer).")
     else:
-        # API Call an Discord (Rolle zuweisen)
+        # --- A. DISCORD ROLLE VERGEBEN ---
         url = f"https://discord.com/api/v10/guilds/{GUILD_ID}/members/{discord_id}/roles/{ROLE_ID}"
         headers = {
             "Authorization": f"Bot {DISCORD_BOT_TOKEN}",
             "Content-Type": "application/json"
         }
         
-        response = requests.put(url, headers=headers)
-        
-        if response.status_code == 204:
-            st.success("✅ Erfolg! Die Cop-Rolle wurde dir auf dem Discord zugewiesen.")
-            st.balloons()
-        elif response.status_code == 404:
-            st.error("❌ User nicht gefunden. Bist du sicher, dass du auf dem Server bist?")
-        else:
-            st.error(f"❌ Fehler: {response.status_code}. Kontaktiere einen Admin.")
-# Verbindung zu Google Sheets (nutzt die Konfiguration aus deinen Secrets)
-conn = st.connection("gsheets", type=GSheetsConnection)
-
-# 1. Daten aus dem Sheet lesen
-# Ersetze 'Sheet1' durch den echten Namen deines Tabellenblatts unten
-df = conn.read()
-
-st.title("🚔 PD Einweisung")
-
-# 2. Freie Dienstnummern finden
-# Wir filtern das Tabellenblatt nach Zeilen, wo in der Spalte "Name" nichts steht
-if 'Dienstnummer' in df.columns and 'Name' in df.columns:
-    # Sucht nach leeren Feldern (NaN) oder leeren Texten in der Namens-Spalte
-    freie_nummern = df[df['Name'].isna() | (df['Name'] == "")]['Dienstnummer'].tolist()
-    
-    if freie_nummern:
-        ausgewaehlte_nr = st.selectbox("Wähle eine freie Dienstnummer:", freie_nummern)
-    else:
-        st.warning("Momentan sind keine Dienstnummern frei!")
-else:
-    st.error("Fehler: Die Spalten 'Dienstnummer' oder 'Name' fehlen im Google Sheet!")
-
-# Eingabefeld für den Namen
-name_eingabe = st.text_input("Dein Name für die Mitgliederliste:")
-
-# ... (Hier kommt dein Dokument-Scroll-Teil und die Discord-Logik) ...
-
-if st.button("Einweisung abschließen", disabled=not confirm):
-    if not name_eingabe or not discord_id:
-        st.error("Bitte gib deinen Namen und deine Discord-ID ein.")
-    else:
-        # A. Discord Rolle vergeben (wie bisher)
-        # ... (dein requests.put Call) ...
-        
-        # B. Eintrag ins Google Sheet (nur Name)
         try:
-            # Wir suchen den Index der Zeile mit der gewählten Dienstnummer
-            idx = df.index[df['Dienstnummer'] == ausgewaehlte_nr].tolist()[0]
+            discord_response = requests.put(url, headers=headers)
             
-            # Name in den Datensatz eintragen
-            df.at[idx, 'Name'] = name_eingabe
+            if discord_response.status_code == 204:
+                # --- B. GOOGLE SHEET AKTUALISIEREN ---
+                try:
+                    # Index der Zeile finden, die aktualisiert werden soll
+                    idx = df.index[df['Dienstnummer'] == ausgewaehlte_nr].tolist()[0]
+                    
+                    # Name in das lokale DataFrame schreiben
+                    df.at[idx, 'Name'] = name_eingabe
+                    
+                    # Zurück in das Google Sheet schreiben
+                    conn.update(data=df)
+                    
+                    st.success(f"✅ Erfolg! Die Rolle wurde zugewiesen und Dienstnummer {ausgewaehlte_nr} auf deinen Namen reserviert.")
+                    st.balloons()
+                    
+                except Exception as sheet_error:
+                    st.error(f"Rolle vergeben, aber Fehler beim Google Sheet Eintrag: {sheet_error}")
+                    st.info("Bitte informiere einen Admin, dass dein Name nicht im Sheet eingetragen werden konnte.")
             
-            # Das gesamte Sheet mit dem neuen Namen aktualisieren
-            conn.update(data=df)
-            
-            st.success(f"Erfolgreich! Dienstnummer {ausgewaehlte_nr} wurde für {name_eingabe} reserviert.")
-            st.balloons()
+            elif discord_response.status_code == 404:
+                st.error("❌ User-ID nicht gefunden. Bist du sicher, dass du auf dem Discord-Server bist?")
+            elif discord_response.status_code == 403:
+                st.error("❌ Bot hat keine Berechtigung. Die Bot-Rolle muss in Discord ÜBER der Cop-Rolle stehen!")
+            else:
+                st.error(f"❌ Discord-Fehler: {discord_response.status_code}")
+                
         except Exception as e:
-            st.error(f"Fehler beim Speichern im Sheet: {e}")
+            st.error(f"Ein technischer Fehler ist aufgetreten: {e}")
