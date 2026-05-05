@@ -53,3 +53,52 @@ if st.button("Einweisung abschließen & Rolle erhalten", disabled=not confirm):
             st.error("❌ User nicht gefunden. Bist du sicher, dass du auf dem Server bist?")
         else:
             st.error(f"❌ Fehler: {response.status_code}. Kontaktiere einen Admin.")
+# Verbindung zu Google Sheets (nutzt die Konfiguration aus deinen Secrets)
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+# 1. Daten aus dem Sheet lesen
+# Ersetze 'Sheet1' durch den echten Namen deines Tabellenblatts unten
+df = conn.read()
+
+st.title("🚔 PD Einweisung")
+
+# 2. Freie Dienstnummern finden
+# Wir filtern das Tabellenblatt nach Zeilen, wo in der Spalte "Name" nichts steht
+if 'Dienstnummer' in df.columns and 'Name' in df.columns:
+    # Sucht nach leeren Feldern (NaN) oder leeren Texten in der Namens-Spalte
+    freie_nummern = df[df['Name'].isna() | (df['Name'] == "")]['Dienstnummer'].tolist()
+    
+    if freie_nummern:
+        ausgewaehlte_nr = st.selectbox("Wähle eine freie Dienstnummer:", freie_nummern)
+    else:
+        st.warning("Momentan sind keine Dienstnummern frei!")
+else:
+    st.error("Fehler: Die Spalten 'Dienstnummer' oder 'Name' fehlen im Google Sheet!")
+
+# Eingabefeld für den Namen
+name_eingabe = st.text_input("Dein Name für die Mitgliederliste:")
+
+# ... (Hier kommt dein Dokument-Scroll-Teil und die Discord-Logik) ...
+
+if st.button("Einweisung abschließen", disabled=not confirm):
+    if not name_eingabe or not discord_id:
+        st.error("Bitte gib deinen Namen und deine Discord-ID ein.")
+    else:
+        # A. Discord Rolle vergeben (wie bisher)
+        # ... (dein requests.put Call) ...
+        
+        # B. Eintrag ins Google Sheet (nur Name)
+        try:
+            # Wir suchen den Index der Zeile mit der gewählten Dienstnummer
+            idx = df.index[df['Dienstnummer'] == ausgewaehlte_nr].tolist()[0]
+            
+            # Name in den Datensatz eintragen
+            df.at[idx, 'Name'] = name_eingabe
+            
+            # Das gesamte Sheet mit dem neuen Namen aktualisieren
+            conn.update(data=df)
+            
+            st.success(f"Erfolgreich! Dienstnummer {ausgewaehlte_nr} wurde für {name_eingabe} reserviert.")
+            st.balloons()
+        except Exception as e:
+            st.error(f"Fehler beim Speichern im Sheet: {e}")
