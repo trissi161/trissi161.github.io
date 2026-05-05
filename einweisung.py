@@ -2,9 +2,9 @@ import streamlit as st
 import requests
 
 # Konfiguration (Diese Werte später in Streamlit Secrets eintragen!)
-DISCORD_BOT_TOKEN = st.secrets["DISCORD_TOKEN"]
-GUILD_ID = st.secrets["GUILD_ID"]
-ROLE_ID = st.secrets["ROLE_ID"]
+DISCORD_BOT_TOKEN = st.secrets["MTUwMTMwOTAwMjA3NDY4OTY2Nw.G7hjIJ.mrYXpBNs-wToyIhWUuk7Q7RYSB0R9vA2RfSqdY"]
+GUILD_ID = st.secrets["1347693028667822204"]
+ROLE_ID = st.secrets["1347693028684464278"]
 
 st.set_page_config(page_title="PD Einweisung", page_icon="🚔")
 
