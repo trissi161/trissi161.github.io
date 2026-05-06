@@ -28,14 +28,7 @@ st.title("🚔 LSPD Einweisung & Onboarding")
 # 2. DOKUMENT ANZEIGEN
 st.write("Bitte lies dir das folgende Dokument aufmerksam durch.")
 document_html = """
-<div style="height: 400px; overflow-y: scroll; padding: 15px; border: 1px solid #333; border-radius: 10px; background-color: #1e1e1e; color: #ffffff;">
-    <h2>Dienstanweisung Police Department</h2>
-    <p><strong>§1 Verhalten im Dienst:</strong> Jeder Beamte hat sich respektvoll zu verhalten...</p>
-    <p>Hier kannst du deinen ausführlichen Text für die Einweisung einfügen. Alle Regeln, die für deine Beamten wichtig sind, sollten hier stehen.</p>
-    <p><strong>§2 Ausrüstung:</strong> Die Dienstwaffe ist stets gesichert zu führen...</p>
-    <hr>
-    <p style='text-align: center;'>--- ENDE DES DOKUMENTS ---</p>
-</div>
+Auf Selbsterarbeitung angepasstes Einweisungsdokument.
 """
 st.markdown(document_html, unsafe_allow_html=True)
 
