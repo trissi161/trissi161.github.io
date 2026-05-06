@@ -23,7 +23,7 @@ except Exception as e:
     st.error(f"Verbindung zum Google Sheet fehlgeschlagen: {e}")
     df = pd.DataFrame()
 
-st.title("🚔 PD Einweisung & Onboarding")
+st.title("🚔 LSPD Einweisung & Onboarding")
 
 # 2. DOKUMENT ANZEIGEN
 st.write("Bitte lies dir das folgende Dokument aufmerksam durch.")
@@ -61,7 +61,7 @@ else:
     st.error("Fehler: Das Google Sheet konnte nicht geladen werden oder die Spalten fehlen.")
 
 # Namenseingabe für das Sheet
-name_eingabe = st.text_input("Dein Name (Vorname_Nachname):", placeholder="z.B. Max_Mustermann")
+name_eingabe = st.text_input("Dein Name (Vorname Nachname):", placeholder="z.B. Max_Mustermann")
 
 # Discord ID Eingabe
 discord_id = st.text_input("Deine Discord User-ID (Zahlenfolge):", placeholder="z.B. 123456789012345678")
