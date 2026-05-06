@@ -86,25 +86,25 @@ if st.button("Einweisung abschließen", disabled=not confirm):
             if discord_response.status_code == 204:
                 # --- B. GOOGLE SHEET AKTUALISIEREN ---
                 try:
-                    # Index der Zeile finden, die aktualisiert werden soll
+                    # 1. Den Index der gewählten Dienstnummer finden
                     idx = df.index[df['Dienstnummer'] == ausgewaehlte_nr].tolist()[0]
                     
-                    # Zeilennummer für Google Sheets berechnen (Index + 2, da Header = Zeile 1)
-                    sheet_row = idx + 2
+                    # 2. Nur den Namen im lokalen Abbild (df) ändern
+                    df.at[idx, 'Name'] = name_eingabe
                     
-                    # Bereich definieren: Spalte B ist "Name". Wir aktualisieren z.B. Zelle "B5"
-                    range_to_update = f"B{sheet_row}"
-                    
-                    # Wir senden nur den Namen an diese eine Zelle
-                    # Das verhindert, dass das gesamte Sheet (und die Formatierung) überschrieben wird
-                    conn.update(
-                        worksheet="Tabellenblatt1", # <-- PRÜFE HIER, OB DEIN BLATT SO HEISST!
-                        range=range_to_update,
-                        data=[[name_eingabe]]
-                    )
+                    # 3. Das gesamte Sheet aktualisieren
+                    # Da wir gspread im Hintergrund nutzen, ist das die sicherste Methode
+                    conn.update(data=df)
                     
                     st.success(f"✅ Erfolg! Die Rolle wurde zugewiesen und Dienstnummer {ausgewaehlte_nr} auf deinen Namen reserviert.")
                     st.balloons()
+                    
+                    # Cache leeren, damit beim nächsten Laden die Nummer weg ist
+                    st.cache_data.clear()
+                    
+                except Exception as sheet_error:
+                    st.error(f"Rolle vergeben, aber Fehler beim Google Sheet Eintrag: {sheet_error}")
+                    st.info("Bitte informiere einen Admin, dass dein Name nicht im Sheet eingetragen werden konnte.")
                     
                     # Cache leeren, damit die Nummer beim nächsten Laden weg ist
                     st.cache_data.clear()
