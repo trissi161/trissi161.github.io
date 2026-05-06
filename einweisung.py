@@ -28,6 +28,7 @@ st.title("🚔 LSPD Einweisung & Onboarding")
 # 2. DOKUMENT ANZEIGEN
 st.write("Bitte lies dir das folgende Dokument aufmerksam durch.")
 document_html = """
+<div style="height: 400px; overflow-y: scroll; padding: 15px; border: 1px solid #333; border-radius: 10px; background-color: #1e1e1e; color: #ffffff;">
 Auf Selbsterarbeitung angepasstes Einweisungsdokument.
 """
 st.markdown(document_html, unsafe_allow_html=True)
