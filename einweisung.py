@@ -16,7 +16,8 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 # 1. DATEN LADEN
 try:
-    df = conn.read()
+    # ttl=0 sorgt dafür, dass wir immer die frischesten Daten ziehen
+    df = conn.read(ttl=0)
 except Exception as e:
     st.error(f"Verbindung zum Google Sheet fehlgeschlagen: {e}")
     df = pd.DataFrame()
@@ -88,14 +89,25 @@ if st.button("Einweisung abschließen", disabled=not confirm):
                     # Index der Zeile finden, die aktualisiert werden soll
                     idx = df.index[df['Dienstnummer'] == ausgewaehlte_nr].tolist()[0]
                     
-                    # Name in das lokale DataFrame schreiben
-                    df.at[idx, 'Name'] = name_eingabe
+                    # Zeilennummer für Google Sheets berechnen (Index + 2, da Header = Zeile 1)
+                    sheet_row = idx + 2
                     
-                    # Zurück in das Google Sheet schreiben
-                    conn.update(data=df)
+                    # Bereich definieren: Spalte B ist "Name". Wir aktualisieren z.B. Zelle "B5"
+                    range_to_update = f"B{sheet_row}"
+                    
+                    # Wir senden nur den Namen an diese eine Zelle
+                    # Das verhindert, dass das gesamte Sheet (und die Formatierung) überschrieben wird
+                    conn.update(
+                        worksheet="Tabellenblatt1", # <-- PRÜFE HIER, OB DEIN BLATT SO HEISST!
+                        range=range_to_update,
+                        data=[[name_eingabe]]
+                    )
                     
                     st.success(f"✅ Erfolg! Die Rolle wurde zugewiesen und Dienstnummer {ausgewaehlte_nr} auf deinen Namen reserviert.")
                     st.balloons()
+                    
+                    # Cache leeren, damit die Nummer beim nächsten Laden weg ist
+                    st.cache_data.clear()
                     
                 except Exception as sheet_error:
                     st.error(f"Rolle vergeben, aber Fehler beim Google Sheet Eintrag: {sheet_error}")
