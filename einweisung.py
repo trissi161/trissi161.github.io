@@ -101,6 +101,11 @@ if st.button("Einweisung abschließen", disabled=not confirm):
                     df.at[idx, 'Anrede'] = anrede
                     df.at[idx, 'Einstelldatum'] = heute
                     
+                    # AUTOMATISCHE WERTE FÜR DROP-DOWNS
+                    # Stelle sicher, dass diese Begriffe exakt so in deiner Datenvalidierung stehen!
+                    df.at[idx, 'Dienstgrad'] = "LSPD - Officer"
+                    df.at[idx, 'Abteilung'] = "Patrol Division"
+                    
                     # Zurück in das Google Sheet schreiben
                     conn.update(data=df)
                     
@@ -112,7 +117,7 @@ if st.button("Einweisung abschließen", disabled=not confirm):
                     
                 except Exception as sheet_error:
                     st.error(f"Rolle vergeben, aber Fehler beim Google Sheet Eintrag: {sheet_error}")
-                    st.info("Bitte prüfe, ob die Spalten 'Anrede' und 'Einstelldatum' in deinem Sheet existieren.")
+                    st.info("Bitte prüfe, ob die Spalten 'Anrede', 'Einstelldatum', 'Dienstgrad' und 'Abteilung' exakt so in deinem Sheet existieren.")
             
             elif discord_response.status_code == 404:
                 st.error("❌ User-ID nicht gefunden. Bist du sicher, dass du auf dem Discord-Server bist?")
