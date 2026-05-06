@@ -45,7 +45,7 @@ st.divider()
 st.subheader("Persönliche Angaben & Dienstnummer")
 
 # Auswahl der Anrede
-anrede = st.radio("Anrede:", ("Herr", "Frau"), horizontal=True)
+ansprache = st.radio("Anrede:", ("Herr", "Frau"), horizontal=True)
 
 # Dienstnummer-Auswahl aus dem Sheet
 ausgewaehlte_nr = None
@@ -98,13 +98,13 @@ if st.button("Einweisung abschließen", disabled=not confirm):
                     
                     # Daten im DataFrame aktualisieren
                     df.at[idx, 'Name'] = name_eingabe
-                    df.at[idx, 'Anrede'] = anrede
+                    df.at[idx, 'Anrede'] = ansprache
                     df.at[idx, 'Einstelldatum'] = heute
                     
                     # Zurück in das Google Sheet schreiben
                     conn.update(data=df)
                     
-                    st.success(f"✅ Erfolg! Willkommen im Dienst, {anrede} {name_eingabe}. Dienstnummer {ausgewaehlte_nr} ist für dich reserviert.")
+                    st.success(f"✅ Erfolg! Willkommen im Dienst, {ansprache} {name_eingabe}. Dienstnummer {ausgewaehlte_nr} ist für dich reserviert.")
                     st.balloons()
                     
                     # Cache leeren für den nächsten User
